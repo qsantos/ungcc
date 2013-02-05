@@ -1,5 +1,5 @@
 CC      = gcc
-CFLAGS  = -Wall -Wextra -Werror -pedantic -ansi -std=c99 -O3
+CFLAGS  = -Wall -Wextra -Werror -pedantic -ansi -std=c99 -O3 -D_XOPEN_SOURCE=700
 LDFLAGS = -O3
 TARGETS = ungcc
 
