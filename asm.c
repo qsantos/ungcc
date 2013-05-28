@@ -35,12 +35,14 @@ void asm_set_reg(op* op, reg reg)
 {
 	op->t = REG;
 	op->v.reg = reg;
+	op->symbol = NULL;
 }
 
 void asm_set_im(op* op, im im)
 {
 	op->t = IM;
 	op->v.im = im;
+	op->symbol = NULL;
 }
 
 void asm_set_addr(op* op, reg base, reg idx, im scale, im disp)
@@ -50,6 +52,7 @@ void asm_set_addr(op* op, reg base, reg idx, im scale, im disp)
 	op->v.addr.idx   = idx;
 	op->v.addr.scale = scale;
 	op->v.addr.disp  = disp;
+	op->symbol = NULL;
 }
 
 static void print_reg(reg reg, size_t s)
@@ -95,6 +98,12 @@ static void print_hex(im im)
 
 static void print_op(op* op, size_t s)
 {
+	if (op->symbol)
+	{
+		printf("%s", op->symbol);
+		return;
+	}
+
 	if (op->t == REG)
 		print_reg(op->v.reg, s);
 	else if (op->t == IM)
@@ -123,44 +132,66 @@ static void print_op(op* op, size_t s)
 	}
 }
 
+#define PRINT_INSTR0(O,N) if(i->op==O){printf(N);}
+#define PRINT_INSTR1(O,N) if(i->op==O){printf(N " ");\
+	print_op(&i->a,i->s);}
+#define PRINT_INSTR2(O,N) if(i->op==O){printf(N " ");\
+	print_op(&i->a,i->s);\
+	putchar(',');\
+	print_op(&i->b,i->s);}
+
 void asm_print(struct asm* c)
 {
 	for (size_t k = 0; k < c->n; k++)
 	{
 		struct instr* i = &c->i[k];
 
-		printf("%-40s", i->orig);
+		if (i->op == UNK)
+			printf("=> %s", i->orig);
+
+		PRINT_INSTR0(NOP,   "nop");
+		PRINT_INSTR0(RET,   "ret");
+		PRINT_INSTR0(LEAVE, "leave");
+		PRINT_INSTR0(HLT,   "hlt");
+		PRINT_INSTR1(PUSH,  "push");
+		PRINT_INSTR1(POP,   "pop");
+		PRINT_INSTR1(JMP,   "jmp");
+		PRINT_INSTR1(JE,    "je");
+		PRINT_INSTR1(JNE,   "jne");
+		PRINT_INSTR1(JA,    "ja");
+		PRINT_INSTR1(JB,    "jb");
+		PRINT_INSTR1(JS,    "js");
+		PRINT_INSTR1(JL,    "jl");
+		PRINT_INSTR1(JLE,   "jle");
+		PRINT_INSTR1(CALL,  "call");
+		PRINT_INSTR1(NOT,   "not");
+		PRINT_INSTR1(NEG,   "neg");
+		PRINT_INSTR2(XCHG,  "xchg");
+		PRINT_INSTR2(ADD,   "add");
+		PRINT_INSTR2(SUB,   "sub");
+		PRINT_INSTR2(MUL,   "mul");
+		PRINT_INSTR2(DIV,   "div");
+		PRINT_INSTR2(AND,   "and");
+		PRINT_INSTR2(OR,    "or");
+		PRINT_INSTR2(XOR,   "xor");
+		PRINT_INSTR2(SAR,   "sar");
+		PRINT_INSTR2(SAL,   "sal");
+		PRINT_INSTR2(SHR,   "shr");
+		PRINT_INSTR2(SHL,   "shl");
+		PRINT_INSTR2(TEST,  "test");
+		PRINT_INSTR2(CMP,   "cmp");
+
 		if (i->op == MOV)
 		{
 			print_op(&i->b, i->s);
 			printf(" = ");
 			print_op(&i->a, i->s);
 		}
-		else if (i->op == LEA)
+		if (i->op == LEA)
 		{
 			print_op(&i->b, i->s);
 			printf(" = &");
 			print_op(&i->a, i->s);
-		}
-		else if (i->op == CALL)
-		{
-			printf("call ");
-			print_op(&i->a, 0);
-		}
-		else if (i->op == JMP)
-		{
-			printf("jmp ");
-			print_op(&i->a, 0);
-		}
-		else if (i->op == JE)
-		{
-			printf("je ");
-			print_op(&i->a, 0);
-		}
-		else if (i->op == JNE)
-		{
-			printf("jne ");
-			print_op(&i->a, 0);
 		}
 		printf("\n");
 	}

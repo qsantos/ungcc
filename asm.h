@@ -6,12 +6,20 @@
 enum opcode
 {
 	UNK,  // unknown
-	MOV,
-	LEA,
-	CALL,
+	NOP,  RET, LEAVE, HLT,
+	PUSH, POP,
 	JMP,
-	JE,
-	JNE,
+	JE,   JNE,
+	JA,   JB,  JS,
+	JL,   JLE,
+	CALL,
+	NOT,  NEG,
+	XCHG,
+	ADD,  SUB, MUL, DIV,
+	AND,  OR,  XOR,
+	SAR,  SAL, SHR, SHL,
+	TEST, CMP,
+	MOV,  LEA,
 };
 
 typedef unsigned char reg;
@@ -40,6 +48,7 @@ typedef struct
 		im   im;
 		addr addr;
 	} v;
+	const char* symbol;
 } op;
 
 struct instr

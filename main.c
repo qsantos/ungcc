@@ -67,69 +67,60 @@ int main(int argc, char** argv)
 		char* orig = strdup(part);
 		struct instr* i = asm_next(&asm, offset, orig);
 
-		part = strtok(part, " "); // opcode;
-		if (strncmp(part, "mov", 3) == 0) // mov, movb, movl
+		const char* opcode = part;
+		while (*(++part) != ' '); // skip the opcode
+		*part = 0;                // mark the end of the opcode
+		while (*(++part) == ' '); // find the parameters
+		const char* params = part;
+
+		READ_INSTR0(NOP,   "nop");
+		READ_INSTR0(RET,   "ret");
+		READ_INSTR0(LEAVE, "leave");
+		READ_INSTR0(HLT,   "hlt");
+		READ_INSTR1(PUSH,  "push");
+		READ_INSTR1(POP,   "pop");
+		READ_INSTR1(JMP,   "jmp");
+		READ_INSTR1(JE,    "je");
+		READ_INSTR1(JNE,   "jne");
+		READ_INSTR1(JA,    "ja");
+		READ_INSTR1(JB,    "jb");
+		READ_INSTR1(JS,    "js");
+		READ_INSTR1(JL,    "jl");
+		READ_INSTR1(JLE,   "jle");
+		READ_INSTR1(CALL,  "call");
+		READ_INSTR1(NOT,   "not");
+		READ_INSTR1(NEG,   "neg");
+		READ_INSTR2(XCHG,  "xchg");
+		READ_INSTR2(ADD,   "add");
+		READ_INSTR2(SUB,   "sub");
+		READ_INSTR2(MUL,   "mul");
+		READ_INSTR2(DIV,   "div");
+		READ_INSTR2(AND,   "and");
+		READ_INSTR2(OR,    "or");
+		READ_INSTR2(XOR,   "xor");
+		READ_INSTR2(SAR,   "sar");
+		READ_INSTR2(SAL,   "sal");
+		READ_INSTR2(SHR,   "shr");
+		READ_INSTR2(SHL,   "shl");
+		READ_INSTR2(TEST,  "test");
+		READ_INSTR2(CMP,   "cmp");
+		READ_INSTR2(LEA,   "lea");
+
+		if (strncmp(opcode, "mov", 3) == 0) // mov, movb, movl
 		{
 			i->op = MOV;
 
-			if (part[3] == 'l')
+			if (opcode[3] == 'l')
 				i->s = 32;
-			else if (part[3] == 'b')
+			else if (opcode[3] == 'b')
 				i->s = 8;
 			else
 				i->s = 0;
 
-			// source
-			part = strtok(NULL, " ");
-			part = read_op(&i->a, part, &i->s);
-			part++; // ','
-
-			// destination
-			read_op(&i->b, part, &i->s);
+			params = read_op(&i->a, params, &i->s)+1;
+			read_op(&i->b, params, &i->s);
 		}
-		else if (strcmp(part, "lea") == 0)
-		{
-			i->op = LEA;
-
-			// source
-			part = strtok(NULL, " ");
-			part = read_op(&i->a, part, &i->s);
-			part++; // ','
-
-			// destination
-			read_op(&i->b, part, &i->s);
-		}
-		else if (strcmp(part, "call") == 0)
-		{
-			i->op = CALL;
-
-			part = strtok(NULL, " ");
-			read_op(&i->a, part, NULL);
-		}
-		else if (strcmp(part, "jmp") == 0)
-		{
-			i->op = JMP;
-
-			part = strtok(NULL, " ");
-			read_op(&i->a, part, NULL);
-		}
-		else if (strcmp(part, "je") == 0)
-		{
-			i->op = JE;
-
-			part = strtok(NULL, " ");
-			read_op(&i->a, part, NULL);
-		}
-		else if (strcmp(part, "jne") == 0)
-		{
-			i->op = JNE;
-
-			part = strtok(NULL, " ");
-			read_op(&i->a, part, NULL);
-		}
-/*
-*/
-//			cur->next = offset + length;
+//		cur->next = offset + length;
 	}
 	fclose(input);
 

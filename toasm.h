@@ -4,12 +4,24 @@
 #include "asm.h"
 
 // reads a register from stdin and return its code
-size_t regcode(char* reg, char** end);
+size_t regcode(const char* reg, const char** end);
 
 // return the bit-size of the next register
 size_t regsize(const char* reg);
 
 // reads an operand and fills 'op'
-char* read_op(op* op, char* str, size_t* s);
+const char* read_op(op* op, const char* str, size_t* s);
+
+// instruction without parameters
+#define READ_INSTR0(O,N) if(strcmp(opcode,N)==0){i->op=O;}
+
+// unary instruction
+#define READ_INSTR1(O,N) if(strcmp(opcode,N)==0){i->op=O;\
+	read_op(&i->a,params,&i->s);} 
+
+// binary instruction
+#define READ_INSTR2(O,N) if(strcmp(opcode,N)==0){i->op=O;\
+	params=read_op(&i->a,params,&i->s)+1;\
+	read_op(&i->b,params,&i->s);} 
 
 #endif

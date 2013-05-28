@@ -1,6 +1,8 @@
 #include "toasm.h"
 
-size_t regcode(char* reg, char** end)
+#include <string.h>
+
+size_t regcode(const char* reg, const char** end)
 {
 	if (reg[0] == 'e' || reg[0] == 'r')
 		reg++;
@@ -36,7 +38,7 @@ size_t regsize(const char* reg)
 	return 16;
 }
 
-char* read_op(op* op, char* str, size_t* s)
+const char* read_op(op* op, const char* str, size_t* s)
 {
 	if (str[0] == '%') // register
 	{
@@ -46,14 +48,20 @@ char* read_op(op* op, char* str, size_t* s)
 	}
 	else if (str[0] == '$') // immediate
 	{
-		im im = strtoul(str+1, &str, 16);
+		im im = strtoul(str+1, (char**) &str, 16);
 		asm_set_im(op, im);
 		return str;
 	}
 	else if ('0' <= str[0] && str[0] <= '9' && str[1] != 'x') // immediate address
 	{
-		im im = strtoul(str, &str, 16);
+		im im = strtoul(str, (char**) &str, 16);
 		asm_set_im(op, im);
+		if (strchr(str, '+') == NULL) // no offset
+		{
+			str += 2; // " <"
+			char* end = strchr(str, '>');
+			op->symbol = strndup(str, end - str);
+		}
 		return str;
 	}
 	else if (str[0] == '*') // indirect address
@@ -62,7 +70,7 @@ char* read_op(op* op, char* str, size_t* s)
 	}
 
 	// address
-	ssize_t disp = strtoul(str, &str, 16);
+	ssize_t disp = strtoul(str, (char**) &str, 16);
 
 	if (str[0] != '(')
 	{
@@ -82,9 +90,8 @@ char* read_op(op* op, char* str, size_t* s)
 
 	size_t idx = regcode(str+1, &str);
 	str++; // ','
-	size_t scale = strtoul(str, &str, 10);
+	size_t scale = strtoul(str, (char**) &str, 10);
 
 	asm_set_addr(op, base, idx, scale, disp);
 	return str+1; // ')'
 }
-
