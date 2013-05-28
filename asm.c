@@ -1,15 +1,15 @@
-#include "code.h"
+#include "asm.h"
 
 #include <stdio.h>
 
-void code_new(struct code* c)
+void asm_new(struct asm* c)
 {
 	c->i = NULL;
 	c->a = 0;
 	c->n = 0;
 }
 
-void code_del(struct code* c)
+void asm_del(struct asm* c)
 {
 	for (size_t i = 0; i < c->n; i++)
 		free(c->i[i].orig);
@@ -17,7 +17,7 @@ void code_del(struct code* c)
 	free(c);
 }
 
-struct instr* code_next(struct code* c, size_t offset, char* orig)
+struct instr* asm_next(struct asm* c, size_t offset, char* orig)
 {
 	if (c->n == c->a)
 	{
@@ -31,19 +31,19 @@ struct instr* code_next(struct code* c, size_t offset, char* orig)
 	return i;
 }
 
-void code_set_reg(op* op, reg reg)
+void asm_set_reg(op* op, reg reg)
 {
 	op->t = REG;
 	op->v.reg = reg;
 }
 
-void code_set_im(op* op, im im)
+void asm_set_im(op* op, im im)
 {
 	op->t = IM;
 	op->v.im = im;
 }
 
-void code_set_addr(op* op, reg base, reg idx, im scale, im disp)
+void asm_set_addr(op* op, reg base, reg idx, im scale, im disp)
 {
 	op->t = ADDR;
 	op->v.addr.base  = base;
@@ -123,7 +123,7 @@ static void print_op(op* op, size_t s)
 	}
 }
 
-void code_print(struct code* c)
+void asm_print(struct asm* c)
 {
 	for (size_t k = 0; k < c->n; k++)
 	{

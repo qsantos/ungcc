@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "code.h"
+#include "asm.h"
 
 size_t regcode(char* reg, char** end)
 {
@@ -45,19 +45,19 @@ char* read_op(op* op, char* str, size_t* s)
 	if (str[0] == '%') // register
 	{
 		if (s && !*s) *s = regsize(str+1);
-		code_set_reg(op, regcode(str+1, &str));
+		asm_set_reg(op, regcode(str+1, &str));
 		return str;
 	}
 	else if (str[0] == '$') // immediate
 	{
 		im im = strtoul(str+1, &str, 16);
-		code_set_im(op, im);
+		asm_set_im(op, im);
 		return str;
 	}
 	else if ('0' <= str[0] && str[0] <= '9' && str[1] != 'x') // immediate address
 	{
 		im im = strtoul(str, &str, 16);
-		code_set_im(op, im);
+		asm_set_im(op, im);
 		return str;
 	}
 	else if (str[0] == '*') // indirect address
@@ -70,7 +70,7 @@ char* read_op(op* op, char* str, size_t* s)
 
 	if (str[0] != '(')
 	{
-		code_set_addr(op, 0, 0, 0, disp);
+		asm_set_addr(op, 0, 0, 0, disp);
 		return str;
 	}
 	str++;
@@ -79,7 +79,7 @@ char* read_op(op* op, char* str, size_t* s)
 
 	if (str[0] != ',')
 	{
-		code_set_addr(op, base, 0, 0, disp);
+		asm_set_addr(op, base, 0, 0, disp);
 		return str+1; // ')'
 	}
 	str++;
@@ -88,7 +88,7 @@ char* read_op(op* op, char* str, size_t* s)
 	str++; // ','
 	size_t scale = strtoul(str, &str, 10);
 
-	code_set_addr(op, base, idx, scale, disp);
+	asm_set_addr(op, base, idx, scale, disp);
 	return str+1; // ')'
 }
 
@@ -124,8 +124,8 @@ int main(int argc, char** argv)
 		usage(argv[0]);
 	}
 
-	struct code code;
-	code_new(&code);
+	struct asm asm;
+	asm_new(&asm);
 
 	char*  line   = NULL;
 	size_t n_line = 0;
@@ -153,7 +153,7 @@ int main(int argc, char** argv)
 		if (!part) continue;
 
 		char* orig = strdup(part);
-		struct instr* i = code_next(&code, offset, orig);
+		struct instr* i = asm_next(&asm, offset, orig);
 
 		part = strtok(part, " "); // opcode;
 		if (strncmp(part, "mov", 3) == 0) // mov, movb, movl
@@ -221,7 +221,7 @@ int main(int argc, char** argv)
 	}
 	fclose(input);
 
-	code_print(&code);
+	asm_print(&asm);
 
 	return 0;
 }

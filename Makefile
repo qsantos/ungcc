@@ -5,14 +5,14 @@ TARGETS = ungcc
 
 all: $(TARGETS)
 
-ungcc: main.o code.o
+ungcc: main.o asm.o
 	$(CC) $(LDFLAGS) $^ -o $@
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm *.o
+	rm -f *.o
 
 destroy: clean
 	rm -f $(TARGETS)

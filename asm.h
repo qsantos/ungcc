@@ -1,5 +1,5 @@
-#ifndef CODE_H
-#define CODE_H
+#ifndef ASM_H
+#define ASM_H
 
 #include <stdlib.h>
 
@@ -61,7 +61,7 @@ struct instr
 */
 };
 
-struct code
+struct asm
 {
 	struct instr* i;
 	size_t        a;
@@ -69,16 +69,16 @@ struct code
 };
 
 // constructor, destructor
-void code_new(struct code* c);
-void code_del(struct code* c);
+void asm_new(struct asm* c);
+void asm_del(struct asm* c);
 
 // instruction building
-struct instr* code_next(struct code* c, size_t offset, char* orig);
-void code_set_reg (op* op, reg reg);
-void code_set_im  (op* op, im im);
-void code_set_addr(op* op, reg base, reg idx, im scale, im disp);
+struct instr* asm_next(struct asm* c, size_t offset, char* orig);
+void asm_set_reg (op* op, reg reg);
+void asm_set_im  (op* op, im im);
+void asm_set_addr(op* op, reg base, reg idx, im scale, im disp);
 
 // other
-void code_print(struct code* c);
+void asm_print(struct asm* c);
 
 #endif
