@@ -60,7 +60,7 @@ static void print_reg(reg reg, size_t s)
 	putchar('%');
 	if (s == 8)
 	{
-		putchar('a' + (reg%4));
+		putchar('a' + ((reg-1)%4));
 		if (reg < 4) putchar('h');
 		else         putchar('l');
 		return;
@@ -71,19 +71,21 @@ static void print_reg(reg reg, size_t s)
 	else if (s == 32)
 		printf("e");
 	
-	if (reg < 4)
+	if (reg <= 4)
 	{
-		putchar('a' + reg);
+		putchar('a'-1 + reg);
 		putchar('x');
 	}
-	else if (reg == 8)
-		printf("sp");
 	else if (reg == 9)
-		printf("bp");
+		printf("sp");
 	else if (reg == 10)
-		printf("si");
+		printf("bp");
 	else if (reg == 11)
+		printf("si");
+	else if (reg == 12)
 		printf("di");
+	else if (reg == 13)
+		printf("zi");
 	else
 		printf("?");
 }
@@ -148,6 +150,8 @@ void asm_print(struct asm* c)
 
 		if (i->op == UNK)
 			printf("=> %s", i->orig);
+		else
+			printf("%-40s", i->orig);
 
 		PRINT_INSTR0(NOP,   "nop");
 		PRINT_INSTR0(RET,   "ret");

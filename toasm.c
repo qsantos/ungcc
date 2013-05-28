@@ -10,20 +10,23 @@ size_t regcode(const char* reg, const char** end)
 	if (end) *end = reg+2;
 
 	if (reg[1] == 'x') // ax, bx, cx, dx
-		return reg[0] - 'a';
+		return reg[0] - 'a' + 1;
 
 	if (reg[1] == 'h') // ah, bh, ch, dh
-		return reg[0] - 'a';
+		return reg[0] - 'a' + 1;
 
 	if (reg[1] == 'l') // al, bl, cl, dl
-		return reg[0] - 'a' + 4;
+		return reg[0] - 'a' + 5;
 	
 	if (reg[1] == 'p') // sp, bp
-		return reg[0] == 's' ? 8 : 9;
+		return reg[0] == 's' ? 9 : 10;
 
 	if (reg[1] == 'i') // si, di
-		return reg[0] == 's' ? 10 : 11;
+		return reg[0] == 's' ? 11 : 12;
 	
+	if (reg[0] == 'i' && reg[1] == 'z') // eiz pseudo-register (= 0)
+		return 13;
+
 	return 0;
 }
 
@@ -79,7 +82,8 @@ const char* read_op(op* op, const char* str, size_t* s)
 	}
 	str++;
 
-	size_t base = regcode(str+1, &str);
+	
+	size_t base = str[0] == '%' ? regcode(str+1, &str) : 0;
 
 	if (str[0] != ',')
 	{
