@@ -103,32 +103,25 @@ static unsigned long countOccurences(const char* str, char c)
 }
 */
 
-static void usage(int argc, char** argv)
+static void usage(const char* name)
 {
-	(void) argc;
-
 	fprintf(stderr,
 		"Usage: %s dumpfile\n"
-		,
-		argv[0]
-	);
+		, name);
+	exit(1);
 }
 
 int main(int argc, char** argv)
 {
 	if (argc < 2)
-	{
-		usage(argc, argv);
-		exit(1);
-	}
+		usage(argv[0]);
 
 	int curarg = 1;
 	FILE* input = fopen(argv[curarg++], "r");
 	if (!input)
 	{
 		fprintf(stderr, "Could not open file '%s'\n", argv[curarg-1]);
-		usage(argc, argv);
-		exit(1);
+		usage(argv[0]);
 	}
 
 	struct code code;
