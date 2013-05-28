@@ -5,8 +5,11 @@ TARGETS = ungcc
 
 all: $(TARGETS)
 
-ungcc: main.c
-	$(CC) $(LDFLAGS) $(CFLAGS) $^ -o $@
+ungcc: main.o code.o
+	$(CC) $(LDFLAGS) $^ -o $@
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
 	rm *.o
