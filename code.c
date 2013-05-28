@@ -128,12 +128,40 @@ void code_print(struct code* c)
 	for (size_t k = 0; k < c->n; k++)
 	{
 		struct instr* i = &c->i[k];
-		if (!i->op) continue;
 
-		printf("%-30s → %zu ", i->orig, i->op);
-		print_op(&i->a, i->s);
-		printf(", ");
-		print_op(&i->b, i->s);
+		printf("%-40s", i->orig);
+		if (i->op == MOV)
+		{
+			print_op(&i->b, i->s);
+			printf(" = ");
+			print_op(&i->a, i->s);
+		}
+		else if (i->op == LEA)
+		{
+			print_op(&i->b, i->s);
+			printf(" = &");
+			print_op(&i->a, i->s);
+		}
+		else if (i->op == CALL)
+		{
+			printf("call ");
+			print_op(&i->a, 0);
+		}
+		else if (i->op == JMP)
+		{
+			printf("jmp ");
+			print_op(&i->a, 0);
+		}
+		else if (i->op == JE)
+		{
+			printf("je ");
+			print_op(&i->a, 0);
+		}
+		else if (i->op == JNE)
+		{
+			printf("jne ");
+			print_op(&i->a, 0);
+		}
 		printf("\n");
 	}
 }

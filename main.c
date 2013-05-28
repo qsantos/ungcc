@@ -44,7 +44,7 @@ char* read_op(op* op, char* str, size_t* s)
 {
 	if (str[0] == '%') // register
 	{
-		if (!*s) *s = regsize(str+1);
+		if (s && !*s) *s = regsize(str+1);
 		code_set_reg(op, regcode(str+1, &str));
 		return str;
 	}
@@ -54,34 +54,42 @@ char* read_op(op* op, char* str, size_t* s)
 		code_set_im(op, im);
 		return str;
 	}
-	else // address
+	else if ('0' <= str[0] && str[0] <= '9' && str[1] != 'x') // immediate address
 	{
-		ssize_t disp = strtoul(str, &str, 16);
-
-		if (str[0] != '(')
-		{
-			code_set_addr(op, 0, 0, 0, disp);
-			return str;
-		}
+		im im = strtoul(str, &str, 16);
+		code_set_im(op, im);
+		return str;
+	}
+	else if (str[0] == '*') // indirect address
+	{
 		str++;
+	}
 
-		size_t base = regcode(str+1, &str);
+	// address
+	ssize_t disp = strtoul(str, &str, 16);
 
-		if (str[0] != ',')
-		{
-			puts(str);
-			code_set_addr(op, base, 0, 0, disp);
-			return str+1; // ')'
-		}
-		str++;
+	if (str[0] != '(')
+	{
+		code_set_addr(op, 0, 0, 0, disp);
+		return str;
+	}
+	str++;
 
-		size_t idx = regcode(str+1, &str);
-		str++; // ','
-		size_t scale = strtoul(str, &str, 10);
+	size_t base = regcode(str+1, &str);
 
-		code_set_addr(op, base, idx, scale, disp);
+	if (str[0] != ',')
+	{
+		code_set_addr(op, base, 0, 0, disp);
 		return str+1; // ')'
 	}
+	str++;
+
+	size_t idx = regcode(str+1, &str);
+	str++; // ','
+	size_t scale = strtoul(str, &str, 10);
+
+	code_set_addr(op, base, idx, scale, disp);
+	return str+1; // ')'
 }
 
 /*
@@ -174,14 +182,47 @@ int main(int argc, char** argv)
 			// destination
 			read_op(&i->b, part, &i->s);
 		}
-/*
+		else if (strcmp(part, "lea") == 0)
+		{
+			i->op = LEA;
+
+			// source
+			part = strtok(NULL, " ");
+			part = read_op(&i->a, part, &i->s);
+			part++; // ','
+
+			// destination
+			read_op(&i->b, part, &i->s);
+		}
+		else if (strcmp(part, "call") == 0)
+		{
+			i->op = CALL;
+
+			part = strtok(NULL, " ");
+			read_op(&i->a, part, NULL);
+		}
 		else if (strcmp(part, "jmp") == 0)
 		{
-			op = JMP;
+			i->op = JMP;
 
-			part = strtok(NULL, " "); // address
-			a = strtoul(part, NULL, 16);
+			part = strtok(NULL, " ");
+			read_op(&i->a, part, NULL);
 		}
+		else if (strcmp(part, "je") == 0)
+		{
+			i->op = JE;
+
+			part = strtok(NULL, " ");
+			read_op(&i->a, part, NULL);
+		}
+		else if (strcmp(part, "jne") == 0)
+		{
+			i->op = JNE;
+
+			part = strtok(NULL, " ");
+			read_op(&i->a, part, NULL);
+		}
+/*
 */
 //			cur->next = offset + length;
 	}

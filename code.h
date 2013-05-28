@@ -7,6 +7,11 @@ enum opcode
 {
 	UNK,  // unknown
 	MOV,
+	LEA,
+	CALL,
+	JMP,
+	JE,
+	JNE,
 };
 
 typedef unsigned char reg;
