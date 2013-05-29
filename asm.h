@@ -58,6 +58,7 @@ struct instr
 	char*  orig;   // original instruction in dump
 
 	// instruction
+	char* label;
 	enum opcode op; // opcode
 	size_t      s;  // 8, 16 or 32 bit operation
 	op          a;  // first operand
@@ -82,7 +83,7 @@ void asm_new(struct asm* c);
 void asm_del(struct asm* c);
 
 // instruction building
-struct instr* asm_next(struct asm* c, size_t offset, char* orig);
+struct instr* asm_next(struct asm* c, size_t offset, char* orig, char* label);
 void asm_set_reg (op* op, reg reg);
 void asm_set_im  (op* op, im im);
 void asm_set_addr(op* op, reg base, reg idx, im scale, im disp);

@@ -12,12 +12,15 @@ void asm_new(struct asm* c)
 void asm_del(struct asm* c)
 {
 	for (size_t i = 0; i < c->n; i++)
+	{
+		free(c->i[i].label);
 		free(c->i[i].orig);
+	}
 	free(c->i);
 	free(c);
 }
 
-struct instr* asm_next(struct asm* c, size_t offset, char* orig)
+struct instr* asm_next(struct asm* c, size_t offset, char* orig, char* label)
 {
 	if (c->n == c->a)
 	{
@@ -28,6 +31,7 @@ struct instr* asm_next(struct asm* c, size_t offset, char* orig)
 	struct instr* i = &c->i[c->n++];
 	i->offset = offset;
 	i->orig   = orig;
+	i->label  = label;
 	return i;
 }
 
@@ -135,8 +139,10 @@ static void print_op(op* op, size_t s)
 }
 
 #define PRINT_INSTR0(O,N) if(i->op==O){printf(N);}
+
 #define PRINT_INSTR1(O,N) if(i->op==O){printf(N " ");\
 	print_op(&i->a,i->s);}
+
 #define PRINT_INSTR2(O,N) if(i->op==O){printf(N " ");\
 	print_op(&i->a,i->s);\
 	putchar(',');\
@@ -147,6 +153,9 @@ void asm_print(struct asm* c)
 	for (size_t k = 0; k < c->n; k++)
 	{
 		struct instr* i = &c->i[k];
+
+		if (i->label)
+			printf("\n<%s>:\n", i->label);
 
 		if (i->op == UNK)
 			printf("=> %s", i->orig);
