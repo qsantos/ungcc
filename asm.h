@@ -2,6 +2,7 @@
 #define ASM_H
 
 #include <stdlib.h>
+#include <stdbool.h>
 
 enum opcode
 {
@@ -64,8 +65,9 @@ struct instr
 	op          a;  // first operand
 	op          b;  // second operand (destination)
 
-/*
 	// execution information
+	bool function;
+/*
 	unsigned long next;   // next instruction   (may be zero)
 	unsigned long branch; // branch instruction (may be zero)
 */
@@ -79,16 +81,18 @@ struct asm
 };
 
 // constructor, destructor
-void asm_new(struct asm* c);
-void asm_del(struct asm* c);
+void asm_new(struct asm* asm);
+void asm_del(struct asm* asm);
 
 // instruction building
-struct instr* asm_next(struct asm* c, size_t offset, char* orig, char* label);
+struct instr* asm_next(struct asm* asm, size_t offset, char* orig, char* label);
 void asm_set_reg (op* op, reg reg);
 void asm_set_im  (op* op, im im);
 void asm_set_addr(op* op, reg base, reg idx, im scale, im disp);
 
 // other
-void asm_print(struct asm* c);
+void instr_print(struct instr* i);
+void asm_print(struct asm* asm);
+struct instr* offset2instr(struct asm* asm, size_t offset);
 
 #endif

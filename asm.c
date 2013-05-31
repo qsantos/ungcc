@@ -2,36 +2,37 @@
 
 #include <stdio.h>
 
-void asm_new(struct asm* c)
+void asm_new(struct asm* asm)
 {
-	c->i = NULL;
-	c->a = 0;
-	c->n = 0;
+	asm->i = NULL;
+	asm->a = 0;
+	asm->n = 0;
 }
 
-void asm_del(struct asm* c)
+void asm_del(struct asm* asm)
 {
-	for (size_t i = 0; i < c->n; i++)
+	for (size_t i = 0; i < asm->n; i++)
 	{
-		free(c->i[i].label);
-		free(c->i[i].orig);
+		free(asm->i[i].label);
+		free(asm->i[i].orig);
 	}
-	free(c->i);
-	free(c);
+	free(asm->i);
+	free(asm);
 }
 
-struct instr* asm_next(struct asm* c, size_t offset, char* orig, char* label)
+struct instr* asm_next(struct asm* asm, size_t offset, char* orig, char* label)
 {
-	if (c->n == c->a)
+	if (asm->n == asm->a)
 	{
-		c->a = c->a ? 2*c->a : 1;
-		c->i = (struct instr*) realloc(c->i, c->a * sizeof(struct instr));
+		asm->a = asm->a ? 2*asm->a : 1;
+		asm->i = (struct instr*) realloc(asm->i, asm->a * sizeof(struct instr));
 	}
 
-	struct instr* i = &c->i[c->n++];
-	i->offset = offset;
-	i->orig   = orig;
-	i->label  = label;
+	struct instr* i = &asm->i[asm->n++];
+	i->offset   = offset;
+	i->orig     = orig;
+	i->label    = label;
+	i->function = false;
 	return i;
 }
 
@@ -148,64 +149,83 @@ static void print_op(op* op, size_t s)
 	putchar(',');\
 	print_op(&i->b,i->s);}
 
-void asm_print(struct asm* c)
+void instr_print(struct instr* i)
 {
-	for (size_t k = 0; k < c->n; k++)
+	if (i->label)
+		printf("\n<%s>:\n", i->label);
+
+	if (i->op == UNK)
+		printf("=> %s", i->orig);
+	else
+		printf("%-40s", i->orig);
+
+	PRINT_INSTR0(NOP,   "nop");
+	PRINT_INSTR0(RET,   "ret");
+	PRINT_INSTR0(LEAVE, "leave");
+	PRINT_INSTR0(HLT,   "hlt");
+	PRINT_INSTR1(PUSH,  "push");
+	PRINT_INSTR1(POP,   "pop");
+	PRINT_INSTR1(JMP,   "jmp");
+	PRINT_INSTR1(JE,    "je");
+	PRINT_INSTR1(JNE,   "jne");
+	PRINT_INSTR1(JA,    "ja");
+	PRINT_INSTR1(JB,    "jb");
+	PRINT_INSTR1(JS,    "js");
+	PRINT_INSTR1(JL,    "jl");
+	PRINT_INSTR1(JLE,   "jle");
+	PRINT_INSTR1(CALL,  "call");
+	PRINT_INSTR1(NOT,   "not");
+	PRINT_INSTR1(NEG,   "neg");
+	PRINT_INSTR2(XCHG,  "xchg");
+	PRINT_INSTR2(ADD,   "add");
+	PRINT_INSTR2(SUB,   "sub");
+	PRINT_INSTR2(MUL,   "mul");
+	PRINT_INSTR2(DIV,   "div");
+	PRINT_INSTR2(AND,   "and");
+	PRINT_INSTR2(OR,    "or");
+	PRINT_INSTR2(XOR,   "xor");
+	PRINT_INSTR2(SAR,   "sar");
+	PRINT_INSTR2(SAL,   "sal");
+	PRINT_INSTR2(SHR,   "shr");
+	PRINT_INSTR2(SHL,   "shl");
+	PRINT_INSTR2(TEST,  "test");
+	PRINT_INSTR2(CMP,   "cmp");
+
+	if (i->op == MOV)
 	{
-		struct instr* i = &c->i[k];
-
-		if (i->label)
-			printf("\n<%s>:\n", i->label);
-
-		if (i->op == UNK)
-			printf("=> %s", i->orig);
-		else
-			printf("%-40s", i->orig);
-
-		PRINT_INSTR0(NOP,   "nop");
-		PRINT_INSTR0(RET,   "ret");
-		PRINT_INSTR0(LEAVE, "leave");
-		PRINT_INSTR0(HLT,   "hlt");
-		PRINT_INSTR1(PUSH,  "push");
-		PRINT_INSTR1(POP,   "pop");
-		PRINT_INSTR1(JMP,   "jmp");
-		PRINT_INSTR1(JE,    "je");
-		PRINT_INSTR1(JNE,   "jne");
-		PRINT_INSTR1(JA,    "ja");
-		PRINT_INSTR1(JB,    "jb");
-		PRINT_INSTR1(JS,    "js");
-		PRINT_INSTR1(JL,    "jl");
-		PRINT_INSTR1(JLE,   "jle");
-		PRINT_INSTR1(CALL,  "call");
-		PRINT_INSTR1(NOT,   "not");
-		PRINT_INSTR1(NEG,   "neg");
-		PRINT_INSTR2(XCHG,  "xchg");
-		PRINT_INSTR2(ADD,   "add");
-		PRINT_INSTR2(SUB,   "sub");
-		PRINT_INSTR2(MUL,   "mul");
-		PRINT_INSTR2(DIV,   "div");
-		PRINT_INSTR2(AND,   "and");
-		PRINT_INSTR2(OR,    "or");
-		PRINT_INSTR2(XOR,   "xor");
-		PRINT_INSTR2(SAR,   "sar");
-		PRINT_INSTR2(SAL,   "sal");
-		PRINT_INSTR2(SHR,   "shr");
-		PRINT_INSTR2(SHL,   "shl");
-		PRINT_INSTR2(TEST,  "test");
-		PRINT_INSTR2(CMP,   "cmp");
-
-		if (i->op == MOV)
-		{
-			print_op(&i->b, i->s);
-			printf(" = ");
-			print_op(&i->a, i->s);
-		}
-		if (i->op == LEA)
-		{
-			print_op(&i->b, i->s);
-			printf(" = &");
-			print_op(&i->a, i->s);
-		}
-		printf("\n");
+		print_op(&i->b, i->s);
+		printf(" = ");
+		print_op(&i->a, i->s);
 	}
+	if (i->op == LEA)
+	{
+		print_op(&i->b, i->s);
+		printf(" = &");
+		print_op(&i->a, i->s);
+	}
+	printf("\n");
+}
+
+void asm_print(struct asm* asm)
+{
+	for (size_t k = 0; k < asm->n; k++)
+		instr_print(asm->i + k);
+
+}
+
+int cmp_offset(const void* a, const void* b)
+{
+	struct instr* ia = (struct instr*) a;
+	struct instr* ib = (struct instr*) b;
+
+	if (ia->offset < ib->offset) return -1;
+	if (ia->offset > ib->offset) return  1;
+	return 0;
+}
+
+struct instr* offset2instr(struct asm* asm, size_t offset)
+{
+	struct instr key;
+	key.offset = offset;
+	return bsearch(&key, asm->i, asm->n, sizeof(struct instr), cmp_offset);
 }

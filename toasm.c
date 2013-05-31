@@ -2,6 +2,7 @@
 
 #include <string.h>
 
+// TODO: should be an enum
 size_t regcode(const char* reg, const char** end)
 {
 	if (reg[0] == 'e' || reg[0] == 'r')
@@ -131,11 +132,11 @@ void fromfile(struct asm* asm, FILE* f)
 		char* part;
 		part = strtok(line, "\t"); // address
 		if (!part) continue;
-		unsigned long offset = strtoul(part, NULL, 16) - 0x8048000;
+		size_t offset = strtoul(part, NULL, 16);
 
 		part = strtok(NULL, "\t"); // hexadecimal value
 		if (!part) continue;
-//		unsigned long length = countOccurences(part, ' ');
+//		size_t length = countOccurences(part, ' ');
 
 		part = strtok(NULL, "\t"); // assembly code
 		if (!part) continue;
