@@ -43,21 +43,35 @@ int main(int argc, char** argv)
 		fprintf(stderr, "Could not open file '%s'\n\n", argv[argn]);
 		usage(name);
 	}
-	argn++;
 
 	// reads dump
 	struct asm asm;
 	fromfile(&asm, input);
 	fclose(input);
 
-	// mark functions
+	// reads _start() to find main() address
 	struct instr* i = offset2instr(&asm, entryPoint);
 	if (!i)
-	{
 		fprintf(stderr, "No such instruction: %#x\n\n", entryPoint);
-		usage(name);
+	i->function = true;
+	for (; i->op != CALL; i++);
+	i--;
+	if (i->op != PUSH || i->a.t != IM)
+	{
+		fprintf(stderr, "Unexpected instruction:\n");
+		instr_print(i);
+		exit(1);
+	}
+	size_t mainAddr = i->a.v.im;
+	i = offset2instr(&asm, mainAddr);
+	if (!i)
+	{
+		fprintf(stderr, "Could not find main() at address %#x\n", mainAddr);
+		exit(1);
 	}
 	i->function = true;
+
+	// mark called functions
 	for (size_t k = 0; k < asm.n; k++)
 	{
 		struct instr* i = asm.i + k;
