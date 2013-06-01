@@ -76,7 +76,7 @@ int main(int argc, char** argv)
 		else if (i->op == JMP ||
 		         i->op == JE  || i->op == JNE ||
 		         i->op == JA  || i->op == JB  ||
-			 i->op == JS  || i->op == JNS ||
+		         i->op == JS  || i->op == JNS ||
 		         i->op == JL  || i->op == JLE)
 		{
 			if ((i = offset2instr(&asm, i->a.v.im)))
@@ -100,7 +100,7 @@ int main(int argc, char** argv)
 		         i->op == HLT || i->op == JMP   ||
 		         i->op == JE  || i->op == JNE   ||
 		         i->op == JA  || i->op == JB    ||
-			 i->op == JS  || i->op == JNS   ||
+		         i->op == JS  || i->op == JNS   ||
 		         i->op == JL  || i->op == JLE)
 		{
 			end = k;
@@ -112,12 +112,26 @@ int main(int argc, char** argv)
 			continue;
 
 		blist_push(&blist, asm.i + start, end-start);
-
-		printf("Block:\n");
-		for (size_t k = start; k <= end; k++)
-			instr_print(asm.i + k);
-		printf("\n\n");
 		start = end+1;
+	}
+
+	for (size_t k = 0; k < blist.n; k++)
+	{
+		struct block* b = blist.b + k;
+		struct instr* i = b->start + b->size-1;
+
+		if (i->op == JMP ||
+		    i->op == JE  || i->op == JNE ||
+		    i->op == JA  || i->op == JB  ||
+		    i->op == JS  || i->op == JNS ||
+		    i->op == JL  || i->op == JLE)
+			if (i->a.t == IM)
+				b->branch = blist_search(&blist, i->a.v.im);
+
+		if (i->op == RET || i->op == LEAVE || i->op == HLT || i->op == JMP)
+			b->next = NULL;
+		else
+			b->next = b+1;
 	}
 
 	blist_del(&blist);
