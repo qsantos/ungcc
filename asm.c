@@ -33,6 +33,7 @@ struct instr* asm_next(struct asm* asm, size_t offset, char* orig, char* label)
 	i->orig     = orig;
 	i->label    = label;
 	i->function = false;
+	i->branch   = false;
 	return i;
 }
 
@@ -156,10 +157,12 @@ void instr_print(struct instr* i)
 
 	if (i->op == UNK)
 		printf("=> %s", i->orig);
-	else
-		printf("%-40s", i->orig);
+	else if (i->op == NOP)
+		return;
+//	else
+//		printf("%-40s", i->orig);
 
-	PRINT_INSTR0(NOP,   "nop");
+//	PRINT_INSTR0(NOP,   "nop");
 	PRINT_INSTR0(RET,   "ret");
 	PRINT_INSTR0(LEAVE, "leave");
 	PRINT_INSTR0(HLT,   "hlt");
@@ -171,6 +174,7 @@ void instr_print(struct instr* i)
 	PRINT_INSTR1(JA,    "ja");
 	PRINT_INSTR1(JB,    "jb");
 	PRINT_INSTR1(JS,    "js");
+	PRINT_INSTR1(JNS,   "jns");
 	PRINT_INSTR1(JL,    "jl");
 	PRINT_INSTR1(JLE,   "jle");
 	PRINT_INSTR1(CALL,  "call");

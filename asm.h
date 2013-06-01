@@ -11,7 +11,8 @@ enum opcode
 	PUSH, POP,
 	JMP,
 	JE,   JNE,
-	JA,   JB,  JS,
+	JA,   JB,
+	JS,   JNS,
 	JL,   JLE,
 	CALL,
 	NOT,  NEG,
@@ -67,6 +68,7 @@ struct instr
 
 	// execution information
 	bool function;
+	bool branch;
 /*
 	unsigned long next;   // next instruction   (may be zero)
 	unsigned long branch; // branch instruction (may be zero)

@@ -136,7 +136,6 @@ void fromfile(struct asm* asm, FILE* f)
 
 		part = strtok(NULL, "\t"); // hexadecimal value
 		if (!part) continue;
-//		size_t length = countOccurences(part, ' ');
 
 		part = strtok(NULL, "\t"); // assembly code
 		if (!part) continue;
@@ -163,6 +162,7 @@ void fromfile(struct asm* asm, FILE* f)
 		READ_INSTR1(JA,    "ja");
 		READ_INSTR1(JB,    "jb");
 		READ_INSTR1(JS,    "js");
+		READ_INSTR1(JNS,   "jns");
 		READ_INSTR1(JL,    "jl");
 		READ_INSTR1(JLE,   "jle");
 		READ_INSTR1(CALL,  "call");

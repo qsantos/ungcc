@@ -1,15 +1,5 @@
 #include "toasm.h"
-
-/*
-static size_t countOccurences(const char* str, char c)
-{
-	size_t ret = 0;
-	for (; *str; str++)
-		if (*str == c)
-			ret++;
-	return ret;
-}
-*/
+#include "block.h"
 
 static void usage(const char* name)
 {
@@ -75,52 +65,62 @@ int main(int argc, char** argv)
 	for (size_t k = 0; k < asm.n; k++)
 	{
 		struct instr* i = asm.i + k;
-		if (i->op == CALL && i->a.t == IM)
+		if (i->a.t != IM)
+			continue;
+
+		if (i->op == CALL)
 		{
-			i = offset2instr(&asm, i->a.v.im);
-			if (i)
+			if ((i = offset2instr(&asm, i->a.v.im)))
 				i->function = true;
 		}
-	}
-
-	// print functions
-	for (size_t k = 0; k < asm.n; k++)
-	{
-		struct instr* i = asm.i + k;
-		if (i->function)
-			instr_print(i);
-	}
-
-//	static const opcode blockEnd[] = {RET, LEAVE, HLT, JMP, JE, JNE, JA, JB, JS, JL, JLE};
-
-//	asm_print(&asm);
-
-/*
-	bool incrIP = false;
-	for (size_t k = 0; k < asm.n; k++)
-	{
-		struct instr* i = asm.i + k;
-
-		if (incrIP)
-			i->function = false;
-
-		if (i->op == JMP || i->op == RET || i->op == LEAVE || i->op == HLT)
-			incrIP = false;
-		else if (i->op != NOP)
-			incrIP = true;
-
-		if (JMP <= i->op && i->op <= JLE && i->a.t == IM)
+		else if (i->op == JMP ||
+		         i->op == JE  || i->op == JNE ||
+		         i->op == JA  || i->op == JB  ||
+			 i->op == JS  || i->op == JNS ||
+		         i->op == JL  || i->op == JLE)
 		{
-			i = offset2instr(&asm, i->a.v.im);
-			if (i)
-				i->function = false;
+			if ((i = offset2instr(&asm, i->a.v.im)))
+				i->branch = true;
 		}
 	}
 
-	for (size_t k = 0; k < asm.n; k++)
-		if (asm.i[k].function)
-			instr_print(asm.i+k);
-*/
+	// find blocks
+	struct blist blist;
+	blist_new(&blist);
+
+	size_t start = 0;
+	for (size_t k = 1; k < asm.n; k++)
+	{
+		struct instr* i = asm.i + k;
+
+		size_t end;
+		if (i->function || i->branch)
+			end = k-1;
+		else if (i->op == RET || i->op == LEAVE ||
+		         i->op == HLT || i->op == JMP   ||
+		         i->op == JE  || i->op == JNE   ||
+		         i->op == JA  || i->op == JB    ||
+			 i->op == JS  || i->op == JNS   ||
+		         i->op == JL  || i->op == JLE)
+		{
+			end = k;
+		}
+		else
+			continue;
+
+		if (start >= end)
+			continue;
+
+		blist_push(&blist, asm.i + start, end-start);
+
+		printf("Block:\n");
+		for (size_t k = start; k <= end; k++)
+			instr_print(asm.i + k);
+		printf("\n\n");
+		start = end+1;
+	}
+
+	blist_del(&blist);
 
 	return 0;
 }
