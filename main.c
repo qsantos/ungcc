@@ -1,5 +1,6 @@
 #include "toasm.h"
 #include "block.h"
+#include "interface.h"
 
 static void usage(const char* name)
 {
@@ -49,7 +50,7 @@ int main(int argc, char** argv)
 	if (i->op != PUSH || i->a.t != IM)
 	{
 		fprintf(stderr, "Unexpected instruction:\n");
-		instr_print(i);
+//		instr_print(i);
 		exit(1);
 	}
 	size_t mainAddr = i->a.v.im;
@@ -87,7 +88,6 @@ int main(int argc, char** argv)
 	// find blocks
 	struct blist blist;
 	blist_new(&blist);
-
 	size_t start = 0;
 	for (size_t k = 1; k < asm.n; k++)
 	{
@@ -111,15 +111,21 @@ int main(int argc, char** argv)
 		if (start >= end)
 			continue;
 
-		blist_push(&blist, asm.i + start, end-start);
+		blist_push(&blist, asm.i + start, end-start+1);
 		start = end+1;
 	}
 
+	// find hierarchy
+	struct functions funs;
+	funs_new(&funs);
 	for (size_t k = 0; k < blist.n; k++)
 	{
 		struct block* b = blist.b + k;
+		if (b->start->function)
+			funs_push(&funs, b);
 		struct instr* i = b->start + b->size-1;
 
+		b->branch = NULL;
 		if (i->op == JMP ||
 		    i->op == JE  || i->op == JNE ||
 		    i->op == JA  || i->op == JB  ||
@@ -130,11 +136,17 @@ int main(int argc, char** argv)
 
 		if (i->op == RET || i->op == LEAVE || i->op == HLT || i->op == JMP)
 			b->next = NULL;
-		else
+		else if (k < blist.n-1 && (b+1)->start->function == false)
 			b->next = b+1;
+		else
+			b->next = NULL;
 	}
 
-	blist_del(&blist);
+	size_t k = 1;
+	struct block* fun = funs.f[k];
+	size_t len = (k < funs.n ? funs.f[k+1] : blist.b+blist.n) - fun;
+	zui(argc, argv, fun, len);
 
+	blist_del(&blist);
 	return 0;
 }

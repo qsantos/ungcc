@@ -101,12 +101,24 @@ const char* read_op(op* op, const char* str, size_t* s)
 	return str+1; // ')'
 }
 
+// instruction without parameters
+#define READ_INSTR0(O,N) if (strcmp(opcode,N) == 0) { i->op = O; }
+
+// unary instruction
+#define READ_INSTR1(O,N) if (strcmp(opcode,N) == 0) { i->op = O; \
+	read_op(&i->a,params,&i->s); } 
+
+// binary instruction
+#define READ_INSTR2(O,N) if (strcmp(opcode,N) == 0) { i->op = O; \
+	params = read_op(&i->a,params,&i->s) + 1; \
+	read_op(&i->b,params,&i->s); } 
+
 void fromfile(struct asm* asm, FILE* f)
 {
 	asm_new(asm);
 
 	char* label = NULL;;
-	char*  line   = NULL;
+	char* line  = NULL;
 	size_t n_line = 0;
 	while (1)
 	{
@@ -145,9 +157,14 @@ void fromfile(struct asm* asm, FILE* f)
 		label = NULL;
 
 		const char* opcode = part;
-		while (*(++part) != ' '); // skip the opcode
-		*part = 0;                // mark the end of the opcode
-		while (*(++part) == ' '); // find the parameters
+		while (*part && *part != ' ') part++; // skip the opcode
+		if (*part)
+		{
+			*part = 0; part++;                    // mark the end of the opcode
+			while (*part && *part == ' ') part++; // find the parameters
+		}
+		if (*part == 0) part = NULL; // no parameters
+
 		const char* params = part;
 
 		READ_INSTR0(NOP,   "nop");

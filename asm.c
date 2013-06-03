@@ -61,108 +61,118 @@ void asm_set_addr(op* op, reg base, reg idx, im scale, im disp)
 	op->symbol = NULL;
 }
 
-static void print_reg(reg reg, size_t s)
+#define PRTCHK(FCT, ...) {ret+=FCT(str+ret,size-ret,__VA_ARGS__);if(ret>=(int)size)return ret;}
+
+static int print_reg(char* str, size_t size, reg reg, size_t s)
 {
-	putchar('%');
+	int ret = 0;
+
+	PRTCHK(snprintf, "%%");
 	if (s == 8)
 	{
-		putchar('a' + ((reg-1)%4));
-		if (reg < 4) putchar('h');
-		else         putchar('l');
-		return;
+		PRTCHK(snprintf, "%c%c", 'a' + ((reg-1)%4), reg < 4 ? 'h' : 'l');
+		return ret;
 	}
 
 	if (s == 64)
-		printf("s");
+		PRTCHK(snprintf, "s")
 	else if (s == 32)
-		printf("e");
+		PRTCHK(snprintf, "e")
 	
 	if (reg <= 4)
-	{
-		putchar('a'-1 + reg);
-		putchar('x');
-	}
+		PRTCHK(snprintf, "%cx", 'a'-1 + reg)
 	else if (reg == 9)
-		printf("sp");
+		PRTCHK(snprintf, "sp")
 	else if (reg == 10)
-		printf("bp");
+		PRTCHK(snprintf, "bp")
 	else if (reg == 11)
-		printf("si");
+		PRTCHK(snprintf, "si")
 	else if (reg == 12)
-		printf("di");
+		PRTCHK(snprintf, "di")
 	else if (reg == 13)
-		printf("zi");
+		PRTCHK(snprintf, "zi")
 	else
-		printf("?");
+		PRTCHK(snprintf, "?")
+
+	return ret;
 }
 
-static void print_hex(im im)
+static int print_hex(char* str, size_t size, im im)
 {
+	int ret = 0;
+
 	if (im < 0)
-		printf("-%#x", -im);
+		PRTCHK(snprintf, "-%#x", -im)
 	else
-		printf("%#x", im);
+		PRTCHK(snprintf, "%#x", im)
+	
+	return ret;
 }
 
-static void print_op(op* op, size_t s)
+static int print_op(char* str, size_t size, op* op, size_t s)
 {
+	int ret = 0;
+
 	if (op->symbol)
 	{
-		printf("%s", op->symbol);
-		return;
+		PRTCHK(snprintf, "%s", op->symbol);
+		return ret;
 	}
 
 	if (op->t == REG)
-		print_reg(op->v.reg, s);
+		PRTCHK(print_reg, op->v.reg, s)
 	else if (op->t == IM)
 	{
-		putchar('$');
-		print_hex(op->v.im);
+		PRTCHK(snprintf, "$");
+		PRTCHK(print_hex, op->v.im);
 	}
 	else if (op->t == ADDR)
 	{
 		addr* a = &op->v.addr;
 		if (a->disp)
-			print_hex(a->disp);
+			PRTCHK(print_hex, a->disp);
 		if (a->base)
 		{
-			putchar('(');
-			print_reg(a->base, 32);
+			PRTCHK(snprintf, "(");
+			PRTCHK(print_reg, a->base, 32);
 			if (a->scale)
 			{
-				putchar(',');
-				print_reg(a->idx, 32);
-				putchar(',');
-				printf("%u", a->scale);
+				PRTCHK(snprintf, ",");
+				PRTCHK(print_reg, a->idx, 32);
+				PRTCHK(snprintf, ", %u", a->scale);
 			}
-			putchar(')');
+			PRTCHK(snprintf, ")");
 		}
 	}
+
+	return ret;
 }
 
-#define PRINT_INSTR0(O,N) if(i->op==O){printf(N);}
+#define PRINT_INSTR0(O,N) if(i->op==O){PRTCHK(snprintf, N);}
 
-#define PRINT_INSTR1(O,N) if(i->op==O){printf(N " ");\
-	print_op(&i->a,i->s);}
+#define PRINT_INSTR1(O,N) if(i->op==O){PRTCHK(snprintf, N " ");\
+	PRTCHK(print_op, &i->a,i->s);}
 
-#define PRINT_INSTR2(O,N) if(i->op==O){printf(N " ");\
-	print_op(&i->a,i->s);\
-	putchar(',');\
-	print_op(&i->b,i->s);}
+#define PRINT_INSTR2(O,N) if(i->op==O){PRTCHK(snprintf, N " ");\
+	PRTCHK(print_op, &i->a,i->s);\
+	PRTCHK(snprintf, ",");\
+	PRTCHK(print_op, &i->b,i->s);}
 
-void instr_print(struct instr* i)
+int instr_print(char* str, size_t size, struct instr* i)
 {
+	int ret = 0;
+
 	if (i->label)
-		printf("\n<%s>:\n", i->label);
+		PRTCHK(snprintf, "\n<%s>:\n", i->label)
 
 	if (i->op == UNK)
-		printf("=> %s", i->orig);
+		PRTCHK(snprintf, "=> %s", i->orig)
 	else if (i->op == NOP)
-		return;
-//	else
-//		printf("%-40s", i->orig);
+	{
+		*str = 0;
+		return ret;
+	}
 
-//	PRINT_INSTR0(NOP,   "nop");
 	PRINT_INSTR0(RET,   "ret");
 	PRINT_INSTR0(LEAVE, "leave");
 	PRINT_INSTR0(HLT,   "hlt");
@@ -197,24 +207,19 @@ void instr_print(struct instr* i)
 
 	if (i->op == MOV)
 	{
-		print_op(&i->b, i->s);
-		printf(" = ");
-		print_op(&i->a, i->s);
+		PRTCHK(print_op, &i->b, i->s);
+		PRTCHK(snprintf, " = ");
+		PRTCHK(print_op, &i->a, i->s);
 	}
 	if (i->op == LEA)
 	{
-		print_op(&i->b, i->s);
-		printf(" = &");
-		print_op(&i->a, i->s);
+		PRTCHK(print_op, &i->b, i->s);
+		PRTCHK(snprintf, " = &");
+		PRTCHK(print_op, &i->a, i->s);
 	}
-	printf("\n");
-}
+	PRTCHK(snprintf, "\n");
 
-void asm_print(struct asm* asm)
-{
-	for (size_t k = 0; k < asm->n; k++)
-		instr_print(asm->i + k);
-
+	return ret;
 }
 
 int cmp_offset(const void* a, const void* b)

@@ -93,8 +93,7 @@ void asm_set_im  (op* op, im im);
 void asm_set_addr(op* op, reg base, reg idx, im scale, im disp);
 
 // other
-void instr_print(struct instr* i);
-void asm_print(struct asm* asm);
+int instr_print(char* str, size_t size, struct instr* i);
 struct instr* offset2instr(struct asm* asm, size_t offset);
 
 #endif
