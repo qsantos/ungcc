@@ -102,6 +102,7 @@ static void displayBlock(struct block* b)
 	}
 	if (b->branch)
 	{
+		glColor4f(unselected, 1, 0, 1);
 		struct block* c = b->branch;
 		glVertex2f(b->x + b->w/2, b->y + b->h + p);
 		glVertex2f(c->x + c->w/2, c->y - p);

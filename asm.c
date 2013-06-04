@@ -161,24 +161,21 @@ static int print_op(char* str, size_t size, op* op, size_t s)
 int snprint_instr(char* str, size_t size, struct instr* i)
 {
 	int ret = 0;
+	*str = 0;
 
 	if (i->label)
-		PRTCHK(snprintf, "\n<%s>:\n", i->label)
+		PRTCHK(snprintf, "<%s>:\n", i->label)
 
 	if (i->op == UNK)
 		PRTCHK(snprintf, "=> %s", i->orig)
-	else if (i->op == NOP)
-	{
-		*str = 0;
-		return ret;
-	}
 
+//	PRINT_INSTR0(NOP,   "nop");
 	PRINT_INSTR0(RET,   "ret");
 	PRINT_INSTR0(LEAVE, "leave");
 	PRINT_INSTR0(HLT,   "hlt");
 	PRINT_INSTR1(PUSH,  "push");
 	PRINT_INSTR1(POP,   "pop");
-	PRINT_INSTR1(JMP,   "jmp");
+//	PRINT_INSTR1(JMP,   "jmp");
 	PRINT_INSTR1(JE,    "je");
 	PRINT_INSTR1(JNE,   "jne");
 	PRINT_INSTR1(JA,    "ja");
@@ -208,19 +205,9 @@ int snprint_instr(char* str, size_t size, struct instr* i)
 	PRINT_INSTR2(SHL,   "shl");
 	PRINT_INSTR2(TEST,  "test");
 	PRINT_INSTR2(CMP,   "cmp");
+	PRINT_INSTR2(MOV,   "mov");
+	PRINT_INSTR2(LEA,   "lea");
 
-	if (i->op == MOV)
-	{
-		PRTCHK(print_op, &i->b, i->s);
-		PRTCHK(snprintf, " = ");
-		PRTCHK(print_op, &i->a, i->s);
-	}
-	if (i->op == LEA)
-	{
-		PRTCHK(print_op, &i->b, i->s);
-		PRTCHK(snprintf, " = &");
-		PRTCHK(print_op, &i->a, i->s);
-	}
 	PRTCHK(snprintf, "\n");
 
 	return ret;
