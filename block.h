@@ -17,6 +17,8 @@ struct block
 	bool  drawn;
 	double x;
 	double y;
+	double h;
+	double w;
 };
 
 struct blist
