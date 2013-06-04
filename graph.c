@@ -2,16 +2,18 @@
 
 #include <math.h>
 
-#define ATTRACT 0.1
+#define ATTRACT 0.01
 #define PUSH    100000
 
-static void attract(double* x, double* y, const struct block* a, const struct block* b)
+static void attract(double* x, double* y, const struct block* a, const struct block* b, double f)
 {
 	double dx = b->x - a->x;
-	double dy = b->y - a->y;
+	double dy = b->y - (a->y + a->h + 200);
+	dx *= 10;
+	dy *= 1 + 4*(dy < 0);
 
-	*x += dx * ATTRACT;
-	*y += dy * ATTRACT;
+	*x -= dx * ATTRACT * f;
+	*y -= dy * ATTRACT * f;
 }
 
 static void pushAway(double* x, double* y, const struct block* a, const struct block* b)
@@ -21,24 +23,22 @@ static void pushAway(double* x, double* y, const struct block* a, const struct b
 	double d2 = dx*dx + dy*dy;
 
 	if (d2 == 0)
-	{
-		*x += 1;
-		*y += 1;
-	}
-	else
-	{
-		double factor = 1/sqrt(d2) * PUSH * a->size * b->size / d2;
-		*x -= dx * factor;
-		*y -= dy * factor;
-	}
+		return;
+
+	double factor = 1/sqrt(d2) * PUSH * a->size * b->size / d2;
+	*x -= dx * factor;
+	(void) y;
+//	*y -= dy * factor;
 }
 
 void spreadNodes(struct block* fun, size_t funlen)
 {
+	double cury = 0;
 	for (size_t k = 0; k < funlen; k++)
 	{
 		fun[k].x = rand() % 10000;
-		fun[k].y = rand() % 10000;
+		fun[k].y = cury;
+		cury += fun[k].h + 100;
 	}
 	for (size_t bla = 0; bla < 1000; bla++)
 	{
@@ -46,18 +46,21 @@ void spreadNodes(struct block* fun, size_t funlen)
 		{
 			struct block* b = fun + k;
 			double dx = 0;
-			double dy = 2* ( (double)k - funlen/2 ); // verticality
+			double dy = 0;// 2* ( (double)k - funlen/2 ); // verticality
 
 			for (size_t k = 0; k < funlen; k++)
-				if (fun[k].next == b || fun[k].branch == b)
-					attract(&dx, &dy, b, fun+k);
+				if (fun+k == b->next || fun+k == b->branch);     // b is parent
+				else if (fun[k].next == b) // b is next
+					attract(&dx, &dy, fun+k, b, 10);
+				else if (fun[k].branch == b) // b is branch
+					attract(&dx, &dy, fun+k, b, 1);
 				else
 					pushAway(&dx, &dy, b, fun+k);
 
-			if (b->next)   attract(&dx, &dy, b, b->next);
-			if (b->branch) attract(&dx, &dy, b, b->branch);
-			dx /= b->size;
-			dy /= b->size;
+//			if (b->next)   attract(&dx, &dy, b, b->next);
+//			if (b->branch) attract(&dx, &dy, b, b->branch);
+//			dx /= b->size;
+//			dy /= b->size;
 			b->x += dx;
 			b->y += dy;
 		}
