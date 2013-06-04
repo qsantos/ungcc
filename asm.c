@@ -158,7 +158,7 @@ static int print_op(char* str, size_t size, op* op, size_t s)
 	PRTCHK(snprintf, ",");\
 	PRTCHK(print_op, &i->b,i->s);}
 
-int instr_print(char* str, size_t size, struct instr* i)
+int snprint_instr(char* str, size_t size, struct instr* i)
 {
 	int ret = 0;
 
@@ -182,11 +182,15 @@ int instr_print(char* str, size_t size, struct instr* i)
 	PRINT_INSTR1(JE,    "je");
 	PRINT_INSTR1(JNE,   "jne");
 	PRINT_INSTR1(JA,    "ja");
+	PRINT_INSTR1(JAE,   "jae");
 	PRINT_INSTR1(JB,    "jb");
+	PRINT_INSTR1(JBE,   "jbe");
 	PRINT_INSTR1(JS,    "js");
 	PRINT_INSTR1(JNS,   "jns");
 	PRINT_INSTR1(JL,    "jl");
 	PRINT_INSTR1(JLE,   "jle");
+	PRINT_INSTR1(JG,    "jg");
+	PRINT_INSTR1(JGE,   "jge");
 	PRINT_INSTR1(CALL,  "call");
 	PRINT_INSTR1(NOT,   "not");
 	PRINT_INSTR1(NEG,   "neg");
@@ -222,7 +226,14 @@ int instr_print(char* str, size_t size, struct instr* i)
 	return ret;
 }
 
-int cmp_offset(const void* a, const void* b)
+void print_instr(struct instr* i)
+{
+	char buffer[1024];
+	snprint_instr(buffer, 1024, i);
+	printf("%s", buffer);
+}
+
+static int cmp_offset(const void* a, const void* b)
 {
 	struct instr* ia = (struct instr*) a;
 	struct instr* ib = (struct instr*) b;

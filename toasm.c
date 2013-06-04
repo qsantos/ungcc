@@ -177,11 +177,15 @@ void fromfile(struct asm* asm, FILE* f)
 		READ_INSTR1(JE,    "je");
 		READ_INSTR1(JNE,   "jne");
 		READ_INSTR1(JA,    "ja");
+		READ_INSTR1(JAE,   "jae");
 		READ_INSTR1(JB,    "jb");
+		READ_INSTR1(JBE,   "jbe");
 		READ_INSTR1(JS,    "js");
 		READ_INSTR1(JNS,   "jns");
 		READ_INSTR1(JL,    "jl");
 		READ_INSTR1(JLE,   "jle");
+		READ_INSTR1(JG,    "jg");
+		READ_INSTR1(JGE,   "jge");
 		READ_INSTR1(CALL,  "call");
 		READ_INSTR1(NOT,   "not");
 		READ_INSTR1(NEG,   "neg");

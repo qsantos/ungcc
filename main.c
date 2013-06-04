@@ -1,3 +1,5 @@
+#include <time.h>
+
 #include "toasm.h"
 #include "block.h"
 #include "interface.h"
@@ -12,6 +14,8 @@ static void usage(const char* name)
 
 int main(int argc, char** argv)
 {
+	srand(time(NULL));
+
 	const char* name = argv[0];
 
 	if (argc == 1)
@@ -50,7 +54,7 @@ int main(int argc, char** argv)
 	if (i->op != PUSH || i->a.t != IM)
 	{
 		fprintf(stderr, "Unexpected instruction:\n");
-//		instr_print(i);
+		print_instr(i);
 		exit(1);
 	}
 	size_t mainAddr = i->a.v.im;
@@ -62,7 +66,7 @@ int main(int argc, char** argv)
 	}
 	i->function = true;
 
-	// mark called functions
+	// mark block and function beginnings
 	for (size_t k = 0; k < asm.n; k++)
 	{
 		struct instr* i = asm.i + k;
@@ -76,9 +80,11 @@ int main(int argc, char** argv)
 		}
 		else if (i->op == JMP ||
 		         i->op == JE  || i->op == JNE ||
-		         i->op == JA  || i->op == JB  ||
+		         i->op == JA  || i->op == JAE ||
+		         i->op == JB  || i->op == JBE ||
 		         i->op == JS  || i->op == JNS ||
-		         i->op == JL  || i->op == JLE)
+		         i->op == JL  || i->op == JLE ||
+		         i->op == JG  || i->op == JGE)
 		{
 			if ((i = offset2instr(&asm, i->a.v.im)))
 				i->branch = true;
@@ -99,16 +105,18 @@ int main(int argc, char** argv)
 		else if (i->op == RET || i->op == LEAVE ||
 		         i->op == HLT || i->op == JMP   ||
 		         i->op == JE  || i->op == JNE   ||
-		         i->op == JA  || i->op == JB    ||
+		         i->op == JA  || i->op == JAE   ||
+		         i->op == JB  || i->op == JBE   ||
 		         i->op == JS  || i->op == JNS   ||
-		         i->op == JL  || i->op == JLE)
+		         i->op == JL  || i->op == JLE   ||
+		         i->op == JG  || i->op == JGE)
 		{
 			end = k;
 		}
 		else
 			continue;
 
-		if (start >= end)
+		if (start > end)
 			continue;
 
 		blist_push(&blist, asm.i + start, end-start+1);
@@ -128,11 +136,23 @@ int main(int argc, char** argv)
 		b->branch = NULL;
 		if (i->op == JMP ||
 		    i->op == JE  || i->op == JNE ||
-		    i->op == JA  || i->op == JB  ||
+		    i->op == JA  || i->op == JAE ||
+		    i->op == JB  || i->op == JBE ||
 		    i->op == JS  || i->op == JNS ||
-		    i->op == JL  || i->op == JLE)
+		    i->op == JL  || i->op == JLE ||
+		    i->op == JG  || i->op == JGE)
+		{
 			if (i->a.t == IM)
+			{
 				b->branch = blist_search(&blist, i->a.v.im);
+
+				if (!b->branch)
+				{
+					printf("Instruction jumps to unknown offset %#x\n", i->a.v.im);
+					print_instr(i);
+				}
+			}
+		}
 
 		if (i->op == RET || i->op == LEAVE || i->op == HLT || i->op == JMP)
 			b->next = NULL;
@@ -142,7 +162,7 @@ int main(int argc, char** argv)
 			b->next = NULL;
 	}
 
-	size_t k = 1;
+	size_t k = 1;//rand() % funs.n;
 	struct block* fun = funs.f[k];
 	size_t len = (k < funs.n ? funs.f[k+1] : blist.b+blist.n) - fun;
 	zui(argc, argv, fun, len);

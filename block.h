@@ -15,8 +15,8 @@ struct block
 
 	// displaying information
 	bool  drawn;
-	float x;
-	float y;
+	double x;
+	double y;
 };
 
 struct blist

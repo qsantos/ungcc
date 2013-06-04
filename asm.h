@@ -11,9 +11,11 @@ enum opcode
 	PUSH, POP,
 	JMP,
 	JE,   JNE,
-	JA,   JB,
+	JA,   JAE,
+	JB,   JBE,
 	JS,   JNS,
 	JL,   JLE,
+	JG,   JGE,
 	CALL,
 	NOT,  NEG,
 	XCHG,
@@ -93,7 +95,9 @@ void asm_set_im  (op* op, im im);
 void asm_set_addr(op* op, reg base, reg idx, im scale, im disp);
 
 // other
-int instr_print(char* str, size_t size, struct instr* i);
+int  snprint_instr(char* str, size_t size, struct instr* i);
+void print_instr(struct instr* i);
+
 struct instr* offset2instr(struct asm* asm, size_t offset);
 
 #endif
