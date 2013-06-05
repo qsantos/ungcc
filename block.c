@@ -1,5 +1,70 @@
 #include "block.h"
 
+#include <stdio.h>
+#include <string.h>
+
+#define PRTCHK(FCT, ...) {ret+=FCT(str+ret,size-ret,__VA_ARGS__);if(ret>=size)return ret;}
+
+int cmp_op(op* a, op* b)
+{
+	if (a->t != b->t) return 1;
+
+	if (a->t == REG)  return a->v.reg  == b->v.reg  ? 0 : 1;
+	if (a->t == IM)   return a->v.im   == b->v.im   ? 0 : 1;
+	if (a->t == ADDR) return memcmp(&a->v.addr, &b->v.addr, sizeof(addr));
+
+	return 1;
+}
+
+size_t block_line(char* str, size_t size, struct instr* instr, size_t n_instr)
+{
+	if (n_instr == 0)
+		return 0;
+
+	enum opcode op = instr->op;
+
+	if (op == NOP || op == JMP || op == CMP || op == TEST)
+	{
+		*str = 0;
+		return 1;
+	}
+
+	if (op == XCHG && cmp_op(&instr->a, &instr->b) == 0)
+	{
+		*str = 0;
+		return 1;
+	}
+
+	if (op == JE || op == JNE)
+	{
+		size_t ret = 0;
+		for (; instr->op != CMP && instr->op != TEST; instr--);
+		PRTCHK(snprintf, "if (");
+		if (instr->op == CMP)
+		{
+			PRTCHK(print_op, &instr->b, instr->s);
+			if (op == JE)
+				PRTCHK(snprintf, " == ")
+			else if (op == JNE)
+				PRTCHK(snprintf, " != ")
+			PRTCHK(print_op, &instr->a, instr->s);
+		}
+		else // TEST
+		{
+			PRTCHK(print_op, &instr->b, instr->s);
+			if (cmp_op(&instr->a, &instr->b) != 0)
+			{
+				PRTCHK(snprintf, " && ");
+				PRTCHK(print_op, &instr->a, instr->s);
+			}
+		}
+		PRTCHK(snprintf, ")\n");
+	}
+	else
+		print_instr(str, size, instr);
+	return 1;
+}
+
 void blist_new(struct blist* l)
 {
 	l->b = NULL;

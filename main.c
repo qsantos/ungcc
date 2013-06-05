@@ -54,7 +54,7 @@ int main(int argc, char** argv)
 	if (i->op != PUSH || i->a.t != IM)
 	{
 		fprintf(stderr, "Unexpected instruction:\n");
-		print_instr(i);
+		printf_instr(i);
 		exit(1);
 	}
 	size_t mainAddr = i->a.v.im;
@@ -149,7 +149,7 @@ int main(int argc, char** argv)
 				if (!b->branch)
 				{
 					printf("Instruction jumps to unknown offset %#x\n", i->a.v.im);
-					print_instr(i);
+					printf_instr(i);
 				}
 			}
 		}

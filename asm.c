@@ -61,11 +61,11 @@ void asm_set_addr(op* op, reg base, reg idx, im scale, im disp)
 	op->symbol = NULL;
 }
 
-#define PRTCHK(FCT, ...) {ret+=FCT(str+ret,size-ret,__VA_ARGS__);if(ret>=(int)size)return ret;}
+#define PRTCHK(FCT, ...) {ret+=FCT(str+ret,size-ret,__VA_ARGS__);if(ret>=size)return ret;}
 
-static int print_reg(char* str, size_t size, reg reg, size_t s)
+int print_reg(char* str, size_t size, reg reg, size_t s)
 {
-	int ret = 0;
+	size_t ret = 0;
 
 	PRTCHK(snprintf, "%%");
 	if (s == 8)
@@ -97,9 +97,9 @@ static int print_reg(char* str, size_t size, reg reg, size_t s)
 	return ret;
 }
 
-static int print_hex(char* str, size_t size, im im)
+int print_hex(char* str, size_t size, im im)
 {
-	int ret = 0;
+	size_t ret = 0;
 
 	if (im < 0)
 		PRTCHK(snprintf, "-%#x", -im)
@@ -109,9 +109,9 @@ static int print_hex(char* str, size_t size, im im)
 	return ret;
 }
 
-static int print_op(char* str, size_t size, op* op, size_t s)
+int print_op(char* str, size_t size, op* op, size_t s)
 {
-	int ret = 0;
+	size_t ret = 0;
 
 	if (op->symbol)
 	{
@@ -123,8 +123,16 @@ static int print_op(char* str, size_t size, op* op, size_t s)
 		PRTCHK(print_reg, op->v.reg, s)
 	else if (op->t == IM)
 	{
-		PRTCHK(snprintf, "$");
-		PRTCHK(print_hex, op->v.im);
+		size_t v = op->v.im;
+		if (0x1f < v && v < 0x7f)
+			PRTCHK(snprintf, "'%c'", v)
+		else if (v < 0x8048000)
+			PRTCHK(snprintf, "%zi", v)
+		else
+		{
+			PRTCHK(snprintf, "$");
+			PRTCHK(print_hex, v);
+		}
 	}
 	else if (op->t == ADDR)
 	{
@@ -158,9 +166,9 @@ static int print_op(char* str, size_t size, op* op, size_t s)
 	PRTCHK(snprintf, ",");\
 	PRTCHK(print_op, &i->b,i->s);}
 
-int snprint_instr(char* str, size_t size, struct instr* i)
+int print_instr(char* str, size_t size, struct instr* i)
 {
-	int ret = 0;
+	size_t ret = 0;
 	*str = 0;
 
 	if (i->label)
@@ -169,13 +177,13 @@ int snprint_instr(char* str, size_t size, struct instr* i)
 	if (i->op == UNK)
 		PRTCHK(snprintf, "=> %s", i->orig)
 
-//	PRINT_INSTR0(NOP,   "nop");
+	PRINT_INSTR0(NOP,   "nop");
 	PRINT_INSTR0(RET,   "ret");
 	PRINT_INSTR0(LEAVE, "leave");
 	PRINT_INSTR0(HLT,   "hlt");
 	PRINT_INSTR1(PUSH,  "push");
 	PRINT_INSTR1(POP,   "pop");
-//	PRINT_INSTR1(JMP,   "jmp");
+	PRINT_INSTR1(JMP,   "jmp");
 	PRINT_INSTR1(JE,    "je");
 	PRINT_INSTR1(JNE,   "jne");
 	PRINT_INSTR1(JA,    "ja");
@@ -213,10 +221,10 @@ int snprint_instr(char* str, size_t size, struct instr* i)
 	return ret;
 }
 
-void print_instr(struct instr* i)
+void printf_instr(struct instr* i)
 {
 	char buffer[1024];
-	snprint_instr(buffer, 1024, i);
+	print_instr(buffer, 1024, i);
 	printf("%s", buffer);
 }
 

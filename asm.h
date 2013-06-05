@@ -68,13 +68,9 @@ struct instr
 	op          a;  // first operand
 	op          b;  // second operand (destination)
 
-	// execution information
+	// execution path information
 	bool function;
 	bool branch;
-/*
-	unsigned long next;   // next instruction   (may be zero)
-	unsigned long branch; // branch instruction (may be zero)
-*/
 };
 
 struct asm
@@ -95,8 +91,12 @@ void asm_set_im  (op* op, im im);
 void asm_set_addr(op* op, reg base, reg idx, im scale, im disp);
 
 // other
-int  snprint_instr(char* str, size_t size, struct instr* i);
-void print_instr(struct instr* i);
+int print_reg  (char* str, size_t size, reg reg, size_t s);
+int print_hex  (char* str, size_t size, im im);
+int print_op   (char* str, size_t size, op* op, size_t s);
+int print_instr(char* str, size_t size, struct instr* i);
+
+void printf_instr(struct instr* i);
 
 struct instr* offset2instr(struct asm* asm, size_t offset);
 

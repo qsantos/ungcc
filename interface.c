@@ -50,15 +50,23 @@ static inline void initDim(struct block* b, size_t n)
 	{
 		double maxWidth = 0;
 		size_t lines = 0;
-		for (size_t k = 0; k < b->size; k++)
-		{
-			unsigned char glText[BUFSIZE];
-			snprint_instr((char*) glText, BUFSIZE, b->start+k);
 
-			double textWidth = glutStrokeLength(FONT, glText);
+		struct instr* instr = b->start;
+		size_t        size  = b->size;
+		while (true)
+		{
+			char glText[BUFSIZE];
+			size_t ret = block_line(glText, BUFSIZE, instr, size);
+			if (ret == 0)
+				break;
+
+			instr += ret;
+			size  -= ret;
+
+			double textWidth = glutStrokeLength(FONT, (unsigned char*) glText);
 			if (textWidth > maxWidth)
 				maxWidth = textWidth;
-			lines += countChars((const char*) glText, '\n');
+			lines += countChars(glText, '\n');
 		}
 		b->w = blockScale * maxWidth;
 		b->h = blockScale * lines * glutStrokeHeight(FONT);
@@ -84,11 +92,18 @@ static void displayBlock(struct block* b)
 	glEnd();
 
 	glScalef(blockScale, -blockScale, blockScale);
-	for (size_t k = 0; k < b->size; k++)
+	struct instr* instr = b->start;
+	size_t        size  = b->size;
+	while (true)
 	{
-		unsigned char glText[BUFSIZE];
-		snprint_instr((char*) glText, BUFSIZE, b->start+k);
-		glutStrokeString(FONT, glText);
+		char glText[BUFSIZE];
+		size_t ret = block_line(glText, BUFSIZE, instr, size);
+		if (ret == 0)
+			break;
+
+		instr += ret;
+		size  -= ret;
+		glutStrokeString(FONT, (unsigned char*) glText);
 	}
 
 	glPopMatrix();

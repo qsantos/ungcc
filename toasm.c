@@ -101,17 +101,34 @@ const char* read_op(op* op, const char* str, size_t* s)
 	return str+1; // ')'
 }
 
+#define X(N) (sizeof(N)-1)
 // instruction without parameters
-#define READ_INSTR0(O,N) if (strcmp(opcode,N) == 0) { i->op = O; }
+#define READ_INSTR0(O,N) if (strcmp(opcode,N) == 0 || strcmp(opcode,N "l") == 0|| strcmp(opcode,N "b") == 0) \
+	{ \
+	i->op = O; \
+	i->s = opcode[X(N)] == 'l' ? 32 : (opcode[X(N)] == 'b' ? 8 : 0); \
+	continue; \
+	}
+
 
 // unary instruction
-#define READ_INSTR1(O,N) if (strcmp(opcode,N) == 0) { i->op = O; \
-	read_op(&i->a,params,&i->s); } 
+#define READ_INSTR1(O,N) if (strcmp(opcode,N) == 0 || strcmp(opcode,N "l") == 0|| strcmp(opcode,N "b") == 0) \
+	{ \
+	i->op = O; \
+	i->s = opcode[X(N)] == 'l' ? 32 : (opcode[X(N)] == 'b' ? 8 : 0); \
+	read_op(&i->a,params,&i->s); \
+	continue; \
+	} 
 
 // binary instruction
-#define READ_INSTR2(O,N) if (strcmp(opcode,N) == 0) { i->op = O; \
+#define READ_INSTR2(O,N) if (strcmp(opcode,N) == 0 || strcmp(opcode,N "l") == 0|| strcmp(opcode,N "b") == 0) \
+	{ \
+	i->op = O; \
+	i->s = opcode[X(N)] == 'l' ? 32 : (opcode[X(N)] == 'b' ? 8 : 0); \
 	params = read_op(&i->a,params,&i->s) + 1; \
-	read_op(&i->b,params,&i->s); } 
+	read_op(&i->b,params,&i->s); \
+	continue; \
+	}
 
 void fromfile(struct asm* asm, FILE* f)
 {
@@ -203,23 +220,10 @@ void fromfile(struct asm* asm, FILE* f)
 		READ_INSTR2(SHL,   "shl");
 		READ_INSTR2(TEST,  "test");
 		READ_INSTR2(CMP,   "cmp");
+		READ_INSTR2(MOV,   "mov");
 		READ_INSTR2(LEA,   "lea");
 
-		if (strncmp(opcode, "mov", 3) == 0) // mov, movb, movl
-		{
-			i->op = MOV;
-
-			if (opcode[3] == 'l')
-				i->s = 32;
-			else if (opcode[3] == 'b')
-				i->s = 8;
-			else
-				i->s = 0;
-
-			params = read_op(&i->a, params, &i->s)+1;
-			read_op(&i->b, params, &i->s);
-		}
-//		cur->next = offset + length;
+		printf("Unknown instruction '%s'\n", orig);
 	}
 
 	free(line);

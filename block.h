@@ -21,6 +21,8 @@ struct block
 	double w;
 };
 
+size_t block_line(char* str, size_t size, struct instr* instr, size_t n_instr);
+
 struct blist
 {
 	struct block* b;
