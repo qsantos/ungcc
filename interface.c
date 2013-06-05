@@ -3,7 +3,6 @@
 #include <GL/freeglut.h>
 #include <stdio.h>
 #include <string.h>
-#include <assert.h>
 
 #include "graph.h"
 
@@ -28,9 +27,9 @@ static double viewZoom = 1;
 static const double blockScale = 0.1;
 static const double blockPadding = 20;
 
-static struct block* fun;
+static block_t* fun;
 static size_t        funlen;
-static struct block* curBlock;
+static block_t* curBlock;
 
 static size_t countChars(const char* str, char c)
 {
@@ -44,14 +43,14 @@ static size_t countChars(const char* str, char c)
 #define BUFSIZE   1024
 #define FONT      GLUT_STROKE_MONO_ROMAN
 // sets the height and width of blocks
-static inline void initDim(struct block* b, size_t n)
+static inline void initDim(block_t* b, size_t n)
 {
 	for (; n; n--, b++)
 	{
 		double maxWidth = 0;
 		size_t lines = 0;
 
-		struct instr* instr = b->start;
+		instr_t* instr = b->start;
 		size_t        size  = b->size;
 		while (true)
 		{
@@ -72,7 +71,7 @@ static inline void initDim(struct block* b, size_t n)
 		b->h = blockScale * lines * glutStrokeHeight(FONT);
 	}
 }
-static void displayBlock(struct block* b)
+static void displayBlock(block_t* b)
 {
 	if (!b || b->drawn) return;
 	b->drawn = true;
@@ -92,7 +91,7 @@ static void displayBlock(struct block* b)
 	glEnd();
 
 	glScalef(blockScale, -blockScale, blockScale);
-	struct instr* instr = b->start;
+	instr_t* instr = b->start;
 	size_t        size  = b->size;
 	while (true)
 	{
@@ -111,14 +110,14 @@ static void displayBlock(struct block* b)
 	glBegin(GL_LINES);
 	if (b->next)
 	{
-		struct block* c = b->next;
+		block_t* c = b->next;
 		glVertex2f(b->x + b->w/2, b->y + b->h + p);
 		glVertex2f(c->x + c->w/2, c->y - p);
 	}
 	if (b->branch)
 	{
 		glColor4f(unselected, 1, 0, 1);
-		struct block* c = b->branch;
+		block_t* c = b->branch;
 		glVertex2f(b->x + b->w/2, b->y + b->h + p);
 		glVertex2f(c->x + c->w/2, c->y - p);
 	}
@@ -201,10 +200,10 @@ static void cb_mouseFunc(int button, int state, int _x, int _y)
 
 		// find closest block
 		double d_min = -1;
-		struct block* b_min = NULL;
+		block_t* b_min = NULL;
 		for (size_t k = 0; k < funlen; k++)
 		{
-			struct block* b = fun+k;
+			block_t* b = fun+k;
 			double dx = x - b->x;
 			double dy = y - b->y;
 			double d = dx*dx + dy*dy;
@@ -259,7 +258,7 @@ static void glInit()
 //	glTranslatef(0.375, 0.375, 0); // hack against pixel centered coordinates
 }
 
-void zui(int argc, char** argv, struct block* _fun, size_t len)
+void zui(int argc, char** argv, block_t* _fun, size_t len)
 {
 	fun      = _fun;
 	funlen   = len;

@@ -3,6 +3,6 @@
 
 #include "block.h"
 
-void zui(int argc, char** argv, struct block* fun, size_t len);
+void zui(int argc, char** argv, block_t* fun, size_t len);
 
 #endif

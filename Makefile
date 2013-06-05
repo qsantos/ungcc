@@ -5,7 +5,7 @@ TARGETS = ungcc
 
 all: $(TARGETS)
 
-ungcc: main.o asm.o toasm.o block.o interface.o graph.o
+ungcc: main.o asm.o block.o interface.o graph.o
 	$(CC) $(LDFLAGS) $^ -o $@
 
 %.o: %.c

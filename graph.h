@@ -3,6 +3,6 @@
 
 #include "block.h"
 
-void spreadNodes(struct block* fun, size_t funlen);
+void spreadNodes(block_t* fun, size_t funlen);
 
 #endif

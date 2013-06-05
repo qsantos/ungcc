@@ -5,7 +5,7 @@
 #define ATTRACT 0.01
 #define PUSH    100000
 
-static void attract(double* x, double* y, const struct block* a, const struct block* b, double f)
+static void attract(double* x, double* y, const block_t* a, const block_t* b, double f)
 {
 	double dx = b->x - a->x;
 	double dy = b->y - (a->y + a->h + 200);
@@ -16,7 +16,7 @@ static void attract(double* x, double* y, const struct block* a, const struct bl
 	*y -= dy * ATTRACT * f;
 }
 
-static void pushAway(double* x, double* y, const struct block* a, const struct block* b)
+static void pushAway(double* x, double* y, const block_t* a, const block_t* b)
 {
 	double dx = b->x - a->x;
 	double dy = b->y - a->y;
@@ -31,7 +31,7 @@ static void pushAway(double* x, double* y, const struct block* a, const struct b
 //	*y -= dy * factor;
 }
 
-void spreadNodes(struct block* fun, size_t funlen)
+void spreadNodes(block_t* fun, size_t funlen)
 {
 	double cury = 0;
 	for (size_t k = 0; k < funlen; k++)
@@ -44,7 +44,7 @@ void spreadNodes(struct block* fun, size_t funlen)
 	{
 		for (size_t k = 0; k < funlen; k++)
 		{
-			struct block* b = fun + k;
+			block_t* b = fun + k;
 			double dx = 0;
 			double dy = 0;// 2* ( (double)k - funlen/2 ); // verticality
 

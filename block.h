@@ -3,10 +3,10 @@
 
 #include "asm.h"
 
-struct block
+typedef struct block
 {
 	// block information
-	struct instr* start;
+	instr_t* start;
 	size_t        size;
 
 	// branching information
@@ -19,32 +19,32 @@ struct block
 	double y;
 	double h;
 	double w;
-};
+} block_t;
 
-size_t block_line(char* str, size_t size, struct instr* instr, size_t n_instr);
+size_t block_line(char* str, size_t size, instr_t* instr, size_t n_instr);
 
-struct blist
+typedef struct
 {
-	struct block* b;
+	block_t* b;
 	size_t        n;
 	size_t        a;
-};
+} blist_t;
 
-void blist_new (struct blist* l);
-void blist_del (struct blist* l);
-void blist_push(struct blist* l, struct instr* start, size_t size);
+void blist_new (blist_t* l);
+void blist_del (blist_t* l);
+void blist_push(blist_t* l, instr_t* start, size_t size);
 
-struct block* blist_search(struct blist* l, size_t offset);
+block_t* blist_search(blist_t* l, size_t offset);
 
-struct functions
+typedef struct
 {
-	struct block** f;
+	block_t** f;
 	size_t         n;
 	size_t         a;
-};
+} functions_t;
 
-void funs_new (struct functions* f);
-void funs_del (struct functions* f);
-void funs_push(struct functions* f, struct block* b);
+void funs_new (functions_t* f);
+void funs_del (functions_t* f);
+void funs_push(functions_t* f, block_t* b);
 
 #endif

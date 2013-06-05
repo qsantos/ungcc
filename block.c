@@ -5,23 +5,23 @@
 
 #define PRTCHK(FCT, ...) {ret+=FCT(str+ret,size-ret,__VA_ARGS__);if(ret>=size)return ret;}
 
-int cmp_op(op* a, op* b)
+int cmp_op(operand_t* a, operand_t* b)
 {
 	if (a->t != b->t) return 1;
 
 	if (a->t == REG)  return a->v.reg  == b->v.reg  ? 0 : 1;
 	if (a->t == IM)   return a->v.im   == b->v.im   ? 0 : 1;
-	if (a->t == ADDR) return memcmp(&a->v.addr, &b->v.addr, sizeof(addr));
+	if (a->t == ADDR) return memcmp(&a->v.addr, &b->v.addr, sizeof(addr_t));
 
 	return 1;
 }
 
-size_t block_line(char* str, size_t size, struct instr* instr, size_t n_instr)
+size_t block_line(char* str, size_t size, instr_t* instr, size_t n_instr)
 {
 	if (n_instr == 0)
 		return 0;
 
-	enum opcode op = instr->op;
+	opcode_t op = instr->op;
 
 	if (op == NOP || op == JMP || op == CMP || op == TEST)
 	{
@@ -65,27 +65,27 @@ size_t block_line(char* str, size_t size, struct instr* instr, size_t n_instr)
 	return 1;
 }
 
-void blist_new(struct blist* l)
+void blist_new(blist_t* l)
 {
 	l->b = NULL;
 	l->n = 0;
 	l->a = 0;
 }
 
-void blist_del(struct blist* l)
+void blist_del(blist_t* l)
 {
 	free(l->b);
 }
 
-void blist_push(struct blist* l, struct instr* start, size_t size)
+void blist_push(blist_t* l, instr_t* start, size_t size)
 {
 	if (l->n == l->a)
 	{
 		l->a = l->a ? 2*l->a : 1;
-		l->b = (struct block*) realloc(l->b, l->a * sizeof(struct block));
+		l->b = (block_t*) realloc(l->b, l->a * sizeof(block_t));
 	}
 
-	struct block* b = l->b + l->n;
+	block_t* b = l->b + l->n;
 	b->start = start;
 	b->size  = size;
 	l->n++;
@@ -93,8 +93,8 @@ void blist_push(struct blist* l, struct instr* start, size_t size)
 
 static int block_cmp(const void* a, const void* b)
 {
-	struct block* la = (struct block*) a;
-	struct block* lb = (struct block*) b;
+	block_t* la = (block_t*) a;
+	block_t* lb = (block_t*) b;
 
 	size_t oa = la->start->offset;
 	size_t ob = lb->start->offset;
@@ -104,34 +104,34 @@ static int block_cmp(const void* a, const void* b)
 	             return  0;
 }
 
-struct block* blist_search(struct blist* l, size_t offset)
+block_t* blist_search(blist_t* l, size_t offset)
 {
-	struct instr tmp;
-	struct block key;
+	instr_t tmp;
+	block_t key;
 	tmp.offset = offset;
 	key.start = &tmp;
 
-	return bsearch(&key, l->b, l->n, sizeof(struct block), block_cmp);
+	return bsearch(&key, l->b, l->n, sizeof(block_t), block_cmp);
 }
 
-void funs_new(struct functions* f)
+void funs_new(functions_t* f)
 {
 	f->f = NULL;
 	f->n = 0;
 	f->a = 0;
 }
 
-void funs_del(struct functions* f)
+void funs_del(functions_t* f)
 {
 	free(f->f);
 }
 
-void funs_push(struct functions* f, struct block* b)
+void funs_push(functions_t* f, block_t* b)
 {
 	if (f->n == f->a)
 	{
 		f->a = f->a ? 2*f->a : 1;
-		f->f = (struct block**) realloc(f->f, f->a * sizeof(struct block*));
+		f->f = (block_t**) realloc(f->f, f->a * sizeof(block_t*));
 	}
 
 	f->f[f->n++] = b;

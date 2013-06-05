@@ -1,6 +1,5 @@
 #include <time.h>
 
-#include "toasm.h"
 #include "block.h"
 #include "interface.h"
 
@@ -40,12 +39,12 @@ int main(int argc, char** argv)
 	}
 
 	// reads dump
-	struct asm asm;
-	fromfile(&asm, input);
+	asm_t asm;
+	read_file(&asm, input);
 	fclose(input);
 
 	// reads _start() to find main() address
-	struct instr* i = offset2instr(&asm, entryPoint);
+	instr_t* i = offset2instr(&asm, entryPoint);
 	if (!i)
 		fprintf(stderr, "No such instruction: %#x\n\n", entryPoint);
 	i->function = true;
@@ -54,7 +53,7 @@ int main(int argc, char** argv)
 	if (i->op != PUSH || i->a.t != IM)
 	{
 		fprintf(stderr, "Unexpected instruction:\n");
-		printf_instr(stderr, i);
+		fprint_instr(stderr, i);
 		exit(1);
 	}
 	size_t mainAddr = i->a.v.im;
@@ -69,7 +68,7 @@ int main(int argc, char** argv)
 	// mark block and function beginnings
 	for (size_t k = 0; k < asm.n; k++)
 	{
-		struct instr* i = asm.i + k;
+		instr_t* i = asm.i + k;
 		if (i->a.t != IM)
 			continue;
 
@@ -92,12 +91,12 @@ int main(int argc, char** argv)
 	}
 
 	// find blocks
-	struct blist blist;
+	blist_t blist;
 	blist_new(&blist);
 	size_t start = 0;
 	for (size_t k = 1; k < asm.n; k++)
 	{
-		struct instr* i = asm.i + k;
+		instr_t* i = asm.i + k;
 
 		size_t end;
 		if (i->function || i->branch)
@@ -124,14 +123,14 @@ int main(int argc, char** argv)
 	}
 
 	// find hierarchy
-	struct functions funs;
+	functions_t funs;
 	funs_new(&funs);
 	for (size_t k = 0; k < blist.n; k++)
 	{
-		struct block* b = blist.b + k;
+		block_t* b = blist.b + k;
 		if (b->start->function)
 			funs_push(&funs, b);
-		struct instr* i = b->start + b->size-1;
+		instr_t* i = b->start + b->size-1;
 
 		b->branch = NULL;
 		if (i->op == JMP ||
@@ -149,7 +148,7 @@ int main(int argc, char** argv)
 				if (!b->branch)
 				{
 					fprintf(stderr, "Instruction jumps to unknown offset %#x\n", i->a.v.im);
-					printf_instr(stderr, i);
+					fprint_instr(stderr, i);
 				}
 			}
 		}
@@ -163,7 +162,7 @@ int main(int argc, char** argv)
 	}
 
 	size_t k = 1;//rand() % funs.n;
-	struct block* fun = funs.f[k];
+	block_t* fun = funs.f[k];
 	size_t len = (k < funs.n ? funs.f[k+1] : blist.b+blist.n) - fun;
 	zui(argc, argv, fun, len);
 
