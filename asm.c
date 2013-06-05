@@ -44,6 +44,22 @@ instr_t* asm_next(asm_t* asm, size_t offset, char* orig, char* label)
 	return i;
 }
 
+static int cmp_offset(const void* a, const void* b)
+{
+	instr_t* ia = (instr_t*) a;
+	instr_t* ib = (instr_t*) b;
+
+	if (ia->offset < ib->offset) return -1;
+	if (ia->offset > ib->offset) return  1;
+	return 0;
+}
+instr_t* asm_find_at(asm_t* asm, size_t offset)
+{
+	instr_t key;
+	key.offset = offset;
+	return bsearch(&key, asm->i, asm->n, sizeof(instr_t), cmp_offset);
+}
+
 void asm_set_reg(operand_t* op, reg_t reg)
 {
 	op->t = REG;
@@ -72,48 +88,42 @@ void asm_set_addr(operand_t* op, reg_t base, reg_t idx, im_t scale, im_t disp)
 
 // BEGIN parsing information from string
 
-const char* read_regcode(reg_t* dst, const char* str)
+const char* read_register(reg_t* dst, size_t* sz, const char* str)
 {
+	// register size
+	if (sz)
+	{
+		if      (str[0] == 'r') *sz = 64;
+		else if (str[0] == 'e') *sz = 32;
+		else if (str[1] == 'h' ||
+		         str[1] == 'l') *sz = 8;
+		else                    *sz = 16;
+	}
+
 	if (str[0] == 'e' || str[0] == 'r')
 		str++;
 
-	if (str[1] == 'x') // ax, bx, cx, dx
-		*dst = str[0] - 'a' + 1;
-	else if (str[1] == 'h') // ah, bh, ch, dh
-		*dst = str[0] - 'a' + 1;
-	else if (str[1] == 'l') // al, bl, cl, dl
-		*dst = str[0] - 'a' + 5;
-	else if (str[1] == 'p') // sp, bp
-		*dst = str[0] == 's' ? 9 : 10;
-	else if (str[1] == 'i') // si, di
-		*dst = str[0] == 's' ? 11 : 12;
-	else if (str[0] == 'i' && str[1] == 'z') // eiz pseudo-strister (= 0)
-		*dst = 13;
-	else
-		*dst = 0;
+	// register code
+	if (dst)
+	{
+		if      (str[0] == 'i' && str[1] == 'z') *dst = 0 ;     // iz pseudo-strister (= 0)
+		else if (str[1] == 'x') *dst = str[0] - 'a' + 1;        // ax, bx, cx, dx
+		else if (str[1] == 'h') *dst = str[0] - 'a' + 1;        // ah, bh, ch, dh
+		else if (str[1] == 'l') *dst = str[0] - 'a' + 5;        // al, bl, cl, dl
+		else if (str[1] == 'p') *dst = str[0] == 's' ? 9 : 10;  // sp, bp
+		else if (str[1] == 'i') *dst = str[0] == 's' ? 11 : 12; // si, di
+		else                    *dst = 0;
+	}
 
 	return str+2;
 }
 
-void read_regsize(size_t* dst, const char* str)
-{
-	if (str[0] == 'r')
-		*dst = 64;
-	else if (str[0] == 'e')
-		*dst = 32;
-	else if (str[1] == 'h' || str[1] == 'l')
-		*dst = 8;
-	else
-		*dst = 16;
-}
-
-const char* read_operand(operand_t* dst, const char* str, size_t* s)
+const char* read_operand(operand_t* dst, size_t* sz, const char* str)
 {
 	if (str[0] == '%') // register
 	{
-		if (s && *s == 0) read_regsize(s, str+1);
 		reg_t reg;
-		str = read_regcode(&reg, str+1);
+		str = read_register(&reg, sz, str+1);
 		asm_set_reg(dst, reg);
 		return str;
 	}
@@ -152,7 +162,7 @@ const char* read_operand(operand_t* dst, const char* str, size_t* s)
 
 	reg_t base = 0;
 	if (str[0] == '%')
-		str = read_regcode(&base, str+1);
+		str = read_register(&base, NULL, str+1);
 
 	if (str[0] != ',')
 	{
@@ -162,7 +172,7 @@ const char* read_operand(operand_t* dst, const char* str, size_t* s)
 	str++;
 
 	reg_t idx;
-	str = read_regcode(&idx, str+1);
+	str = read_register(&idx, NULL, str+1);
 	str++; // ','
 	size_t scale = strtoul(str, (char**) &str, 10);
 
@@ -172,7 +182,7 @@ const char* read_operand(operand_t* dst, const char* str, size_t* s)
 
 #define X(N) (sizeof(N)-1)
 // instruction without parameters
-#define READ_INSTR0(O,N) if (strcmp(opcode,N) == 0 || strcmp(opcode,N "l") == 0|| strcmp(opcode,N "b") == 0) \
+#define READ_INSTR0(O,N) if (strcmp(opcode,N) == 0 || strcmp(opcode,N "l") == 0 || strcmp(opcode,N "b") == 0) \
 	{ \
 	i->op = O; \
 	i->s = opcode[X(N)] == 'l' ? 32 : (opcode[X(N)] == 'b' ? 8 : 0); \
@@ -181,21 +191,21 @@ const char* read_operand(operand_t* dst, const char* str, size_t* s)
 
 
 // unary instruction
-#define READ_INSTR1(O,N) if (strcmp(opcode,N) == 0 || strcmp(opcode,N "l") == 0|| strcmp(opcode,N "b") == 0) \
+#define READ_INSTR1(O,N) if (strcmp(opcode,N) == 0 || strcmp(opcode,N "l") == 0 || strcmp(opcode,N "b") == 0) \
 	{ \
 	i->op = O; \
 	i->s = opcode[X(N)] == 'l' ? 32 : (opcode[X(N)] == 'b' ? 8 : 0); \
-	read_operand(&i->a,params,&i->s); \
+	read_operand(&i->a, &i->s, params); \
 	continue; \
 	}
 
 // binary instruction
-#define READ_INSTR2(O,N) if (strcmp(opcode,N) == 0 || strcmp(opcode,N "l") == 0|| strcmp(opcode,N "b") == 0) \
+#define READ_INSTR2(O,N) if (strcmp(opcode,N) == 0 || strcmp(opcode,N "l") == 0 || strcmp(opcode,N "b") == 0) \
 	{ \
 	i->op = O; \
 	i->s = opcode[X(N)] == 'l' ? 32 : (opcode[X(N)] == 'b' ? 8 : 0); \
-	params = read_operand(&i->a,params,&i->s) + 1; \
-	read_operand(&i->b,params,&i->s); \
+	params = read_operand(&i->a, &i->s, params) + 1; \
+	read_operand(&i->a, &i->s, params); \
 	continue; \
 	}
 
@@ -470,20 +480,3 @@ void fprint_instr(FILE* f, instr_t* i)
 }
 
 // END printing
-
-// gets instruction from offset
-static int cmp_offset(const void* a, const void* b)
-{
-	instr_t* ia = (instr_t*) a;
-	instr_t* ib = (instr_t*) b;
-
-	if (ia->offset < ib->offset) return -1;
-	if (ia->offset > ib->offset) return  1;
-	return 0;
-}
-instr_t* offset2instr(asm_t* asm, size_t offset)
-{
-	instr_t key;
-	key.offset = offset;
-	return bsearch(&key, asm->i, asm->n, sizeof(instr_t), cmp_offset);
-}

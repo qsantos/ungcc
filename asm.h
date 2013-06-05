@@ -87,15 +87,15 @@ void asm_del(asm_t* asm);
 
 // instruction building
 instr_t* asm_next    (asm_t* asm, size_t offset, char* orig, char* label);
+instr_t* asm_find_at (asm_t* asm, size_t offset);
 void     asm_set_reg (operand_t* op, reg_t reg);
 void     asm_set_im  (operand_t* op, im_t im);
 void     asm_set_addr(operand_t* op, reg_t base, reg_t idx, im_t scale, im_t disp);
 
 // parse information from string
-const char* read_regcode(reg_t*  dst,    const char* str);
-void        read_regsize(size_t* dst,    const char* str);
-const char* read_operand(operand_t* dst, const char* str, size_t* s);
-void        read_file   (asm_t* dst,     FILE* f);
+const char* read_register(reg_t*     dst, size_t* sz, const char* str);
+const char* read_operand (operand_t* dst, size_t* sz, const char* str);
+void        read_file    (asm_t*     dst,             FILE* f);
 
 // printing
 int  print_reg   (char* str, size_t size, reg_t reg, size_t s);
@@ -103,8 +103,5 @@ int  print_hex   (char* str, size_t size, im_t im);
 int  print_op    (char* str, size_t size, operand_t* op, size_t s);
 int  print_instr (char* str, size_t size, instr_t* i);
 void fprint_instr(FILE* f, instr_t* i);
-
-// gets instruction from offset
-instr_t* offset2instr(asm_t* asm, size_t offset);
 
 #endif

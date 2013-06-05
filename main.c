@@ -44,7 +44,7 @@ int main(int argc, char** argv)
 	fclose(input);
 
 	// reads _start() to find main() address
-	instr_t* i = offset2instr(&asm, entryPoint);
+	instr_t* i = asm_find_at(&asm, entryPoint);
 	if (!i)
 		fprintf(stderr, "No such instruction: %#x\n\n", entryPoint);
 	i->function = true;
@@ -57,7 +57,7 @@ int main(int argc, char** argv)
 		exit(1);
 	}
 	size_t mainAddr = i->a.v.im;
-	i = offset2instr(&asm, mainAddr);
+	i = asm_find_at(&asm, mainAddr);
 	if (!i)
 	{
 		fprintf(stderr, "Could not find main() at address %#x\n", mainAddr);
@@ -74,7 +74,7 @@ int main(int argc, char** argv)
 
 		if (i->op == CALL)
 		{
-			if ((i = offset2instr(&asm, i->a.v.im)))
+			if ((i = asm_find_at(&asm, i->a.v.im)))
 				i->function = true;
 		}
 		else if (i->op == JMP ||
@@ -85,7 +85,7 @@ int main(int argc, char** argv)
 		         i->op == JL  || i->op == JLE ||
 		         i->op == JG  || i->op == JGE)
 		{
-			if ((i = offset2instr(&asm, i->a.v.im)))
+			if ((i = asm_find_at(&asm, i->a.v.im)))
 				i->branch = true;
 		}
 	}
