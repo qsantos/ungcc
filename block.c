@@ -25,8 +25,8 @@ size_t block_line(char* str, size_t size, struct instr* instr, size_t n_instr)
 
 	if (op == NOP || op == JMP || op == CMP || op == TEST)
 	{
-		*str = 0;
-		return 1;
+//		*str = 0;
+//		return 1;
 	}
 
 	if (op == XCHG && cmp_op(&instr->a, &instr->b) == 0)

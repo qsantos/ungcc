@@ -221,11 +221,11 @@ int print_instr(char* str, size_t size, struct instr* i)
 	return ret;
 }
 
-void printf_instr(struct instr* i)
+void printf_instr(FILE* f, struct instr* i)
 {
 	char buffer[1024];
 	print_instr(buffer, 1024, i);
-	printf("%s", buffer);
+	fprintf(f, "%s", buffer);
 }
 
 static int cmp_offset(const void* a, const void* b)

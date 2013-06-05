@@ -223,7 +223,7 @@ void fromfile(struct asm* asm, FILE* f)
 		READ_INSTR2(MOV,   "mov");
 		READ_INSTR2(LEA,   "lea");
 
-		printf("Unknown instruction '%s'\n", orig);
+		fprintf(stderr, "Unknown instruction '%s'\n", orig);
 	}
 
 	free(line);

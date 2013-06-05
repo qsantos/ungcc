@@ -1,8 +1,9 @@
 #ifndef ASM_H
 #define ASM_H
 
-#include <stdlib.h>
 #include <stdbool.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 enum opcode
 {
@@ -96,7 +97,7 @@ int print_hex  (char* str, size_t size, im im);
 int print_op   (char* str, size_t size, op* op, size_t s);
 int print_instr(char* str, size_t size, struct instr* i);
 
-void printf_instr(struct instr* i);
+void printf_instr(FILE* f, struct instr* i);
 
 struct instr* offset2instr(struct asm* asm, size_t offset);
 
