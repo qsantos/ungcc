@@ -48,9 +48,9 @@ int main(int argc, char** argv)
 	if (!i)
 		fprintf(stderr, "No such instruction: %#x\n\n", entryPoint);
 	i->function = true;
-	for (; i->op != CALL; i++);
+	for (; i->op != O_CALL; i++);
 	i--;
-	if (i->op != PUSH || i->a.t != IM)
+	if (i->op != O_PUSH || i->a.t != IM)
 	{
 		fprintf(stderr, "Unexpected instruction:\n");
 		fprint_instr(stderr, i);
@@ -72,18 +72,12 @@ int main(int argc, char** argv)
 		if (i->a.t != IM)
 			continue;
 
-		if (i->op == CALL)
+		if (i->op == O_CALL)
 		{
 			if ((i = asm_find_at(&asm, i->a.v.im)))
 				i->function = true;
 		}
-		else if (i->op == JMP ||
-		         i->op == JE  || i->op == JNE ||
-		         i->op == JA  || i->op == JAE ||
-		         i->op == JB  || i->op == JBE ||
-		         i->op == JS  || i->op == JNS ||
-		         i->op == JL  || i->op == JLE ||
-		         i->op == JG  || i->op == JGE)
+		else if (O_JMP <= i->op && i->op <= O_JGE) // jump instruction
 		{
 			if ((i = asm_find_at(&asm, i->a.v.im)))
 				i->branch = true;
@@ -99,16 +93,10 @@ int main(int argc, char** argv)
 		instr_t* i = asm.i + k;
 
 		size_t end;
-		if (i->function || i->branch)
+		if (i->function || i->branch) // block beginning
 			end = k-1;
-		else if (i->op == RET || i->op == LEAVE ||
-		         i->op == HLT || i->op == JMP   ||
-		         i->op == JE  || i->op == JNE   ||
-		         i->op == JA  || i->op == JAE   ||
-		         i->op == JB  || i->op == JBE   ||
-		         i->op == JS  || i->op == JNS   ||
-		         i->op == JL  || i->op == JLE   ||
-		         i->op == JG  || i->op == JGE)
+		else if ((O_RET <= i->op && i->op <= O_HLT) || // function end // TODO
+		         (O_JMP <= i->op && i->op <= O_JGE))   // jump instruction
 		{
 			end = k;
 		}
@@ -133,27 +121,18 @@ int main(int argc, char** argv)
 		instr_t* i = b->start + b->size-1;
 
 		b->branch = NULL;
-		if (i->op == JMP ||
-		    i->op == JE  || i->op == JNE ||
-		    i->op == JA  || i->op == JAE ||
-		    i->op == JB  || i->op == JBE ||
-		    i->op == JS  || i->op == JNS ||
-		    i->op == JL  || i->op == JLE ||
-		    i->op == JG  || i->op == JGE)
+		if (O_JMP <= i->op && i->op <= O_JGE && i->a.t == IM) // jump instruction at immediate address
 		{
-			if (i->a.t == IM)
-			{
-				b->branch = blist_search(&blist, i->a.v.im);
+			b->branch = blist_search(&blist, i->a.v.im);
 
-				if (!b->branch)
-				{
-					fprintf(stderr, "Instruction jumps to unknown offset %#x\n", i->a.v.im);
-					fprint_instr(stderr, i);
-				}
+			if (!b->branch)
+			{
+				fprintf(stderr, "Instruction jumps to unknown offset %#x\n", i->a.v.im);
+				fprint_instr(stderr, i);
 			}
 		}
 
-		if (i->op == RET || i->op == LEAVE || i->op == HLT || i->op == JMP)
+		if ((i->op <= O_RET && i->op <= O_HLT) || i->op == O_JMP) // function end or inconditionnal jump
 			b->next = NULL;
 		else if (k < blist.n-1 && (b+1)->start->function == false)
 			b->next = b+1;

@@ -73,8 +73,8 @@ static inline void initDim(block_t* b, size_t n)
 }
 static void displayBlock(block_t* b)
 {
-	if (!b || b->drawn) return;
-	b->drawn = true;
+	if (!b || b->visited) return;
+	b->visited = true;
 
 	glPushMatrix();
 	glTranslatef(b->x, b->y, 0);
@@ -137,7 +137,7 @@ static void cb_displayFunc()
 	glTranslatef(-viewX, -viewY, 0);
 
 	for (size_t k = 0; k < funlen; k++)
-		fun[k].drawn = false;
+		fun[k].visited = false;
 	displayBlock(fun);
 
 	glPushMatrix();

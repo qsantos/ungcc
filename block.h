@@ -3,23 +3,26 @@
 
 #include "asm.h"
 
-typedef struct block
+// recursive structure
+typedef struct block block_t;
+
+struct block
 {
 	// block information
 	instr_t* start;
-	size_t        size;
+	size_t   size;
 
 	// branching information
-	struct block* next;
-	struct block* branch;
+	block_t* next;
+	block_t* branch;
 
 	// displaying information
-	bool  drawn;
+	bool   visited;
 	double x;
 	double y;
 	double h;
 	double w;
-} block_t;
+};
 
 size_t block_line(char* str, size_t size, instr_t* instr, size_t n_instr);
 

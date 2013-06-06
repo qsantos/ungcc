@@ -46,8 +46,8 @@ instr_t* asm_next(asm_t* asm, size_t offset, char* orig, char* label)
 
 static int cmp_offset(const void* a, const void* b)
 {
-	instr_t* ia = (instr_t*) a;
-	instr_t* ib = (instr_t*) b;
+	const instr_t* ia = (const instr_t*) a;
+	const instr_t* ib = (const instr_t*) b;
 
 	if (ia->offset < ib->offset) return -1;
 	if (ia->offset > ib->offset) return  1;
@@ -62,26 +62,26 @@ instr_t* asm_find_at(asm_t* asm, size_t offset)
 
 void asm_set_reg(operand_t* op, reg_t reg)
 {
-	op->t = REG;
-	op->v.reg = reg;
+	op->t      = REG;
+	op->v.reg  = reg;
 	op->symbol = NULL;
 }
 
 void asm_set_im(operand_t* op, im_t im)
 {
-	op->t = IM;
-	op->v.im = im;
+	op->t      = IM;
+	op->v.im   = im;
 	op->symbol = NULL;
 }
 
 void asm_set_addr(operand_t* op, reg_t base, reg_t idx, im_t scale, im_t disp)
 {
-	op->t = ADDR;
+	op->t            = ADDR;
 	op->v.addr.base  = base;
 	op->v.addr.idx   = idx;
 	op->v.addr.scale = scale;
 	op->v.addr.disp  = disp;
-	op->symbol = NULL;
+	op->symbol       = NULL;
 }
 
 // END instruction building
@@ -106,13 +106,17 @@ const char* read_register(reg_t* dst, size_t* sz, const char* str)
 	// register code
 	if (dst)
 	{
-		if      (str[0] == 'i' && str[1] == 'z') *dst = 0 ;     // iz pseudo-strister (= 0)
+		if      (str[0] == 'i' && str[1] == 'z') *dst = 13;     // iz pseudo-strister (= 0)
 		else if (str[1] == 'x') *dst = str[0] - 'a' + 1;        // ax, bx, cx, dx
 		else if (str[1] == 'h') *dst = str[0] - 'a' + 1;        // ah, bh, ch, dh
 		else if (str[1] == 'l') *dst = str[0] - 'a' + 5;        // al, bl, cl, dl
-		else if (str[1] == 'p') *dst = str[0] == 's' ? 9 : 10;  // sp, bp
+		else if (str[1] == 'p') *dst = str[0] == 's' ?  9 : 10; // sp, bp
 		else if (str[1] == 'i') *dst = str[0] == 's' ? 11 : 12; // si, di
-		else                    *dst = 0;
+		else
+		{
+			fprintf(stderr, "Unknown register '%s'", str);
+			*dst = 0;
+		}
 	}
 
 	return str+2;
@@ -125,6 +129,7 @@ const char* read_operand(operand_t* dst, size_t* sz, const char* str)
 		reg_t reg;
 		str = read_register(&reg, sz, str+1);
 		asm_set_reg(dst, reg);
+
 		return str;
 	}
 	else if (str[0] == '$') // immediate
@@ -205,7 +210,7 @@ const char* read_operand(operand_t* dst, size_t* sz, const char* str)
 	i->op = O; \
 	i->s = opcode[X(N)] == 'l' ? 32 : (opcode[X(N)] == 'b' ? 8 : 0); \
 	params = read_operand(&i->a, &i->s, params) + 1; \
-	read_operand(&i->a, &i->s, params); \
+	read_operand(&i->b, &i->s, params); \
 	continue; \
 	}
 
@@ -263,44 +268,38 @@ void read_file(asm_t* asm, FILE* f)
 
 		const char* params = part;
 
-		READ_INSTR0(NOP,   "nop");
-		READ_INSTR0(RET,   "ret");
-		READ_INSTR0(LEAVE, "leave");
-		READ_INSTR0(HLT,   "hlt");
-		READ_INSTR1(PUSH,  "push");
-		READ_INSTR1(POP,   "pop");
-		READ_INSTR1(JMP,   "jmp");
-		READ_INSTR1(JE,    "je");
-		READ_INSTR1(JNE,   "jne");
-		READ_INSTR1(JA,    "ja");
-		READ_INSTR1(JAE,   "jae");
-		READ_INSTR1(JB,    "jb");
-		READ_INSTR1(JBE,   "jbe");
-		READ_INSTR1(JS,    "js");
-		READ_INSTR1(JNS,   "jns");
-		READ_INSTR1(JL,    "jl");
-		READ_INSTR1(JLE,   "jle");
-		READ_INSTR1(JG,    "jg");
-		READ_INSTR1(JGE,   "jge");
-		READ_INSTR1(CALL,  "call");
-		READ_INSTR1(NOT,   "not");
-		READ_INSTR1(NEG,   "neg");
-		READ_INSTR2(ADD,   "add");
-		READ_INSTR2(SUB,   "sub");
-		READ_INSTR2(MUL,   "mul");
-		READ_INSTR2(DIV,   "div");
-		READ_INSTR2(AND,   "and");
-		READ_INSTR2(OR,    "or");
-		READ_INSTR2(XOR,   "xor");
-		READ_INSTR2(SAR,   "sar");
-		READ_INSTR2(SAL,   "sal");
-		READ_INSTR2(SHR,   "shr");
-		READ_INSTR2(SHL,   "shl");
-		READ_INSTR2(TEST,  "test");
-		READ_INSTR2(CMP,   "cmp");
-		READ_INSTR2(XCHG,  "xchg");
-		READ_INSTR2(MOV,   "mov");
-		READ_INSTR2(LEA,   "lea");
+		READ_INSTR0(O_NOP,   "nop");
+		READ_INSTR0(O_RET,   "ret");
+		READ_INSTR0(O_LEAVE, "leave");
+		READ_INSTR0(O_HLT,   "hlt");
+		READ_INSTR1(O_PUSH,  "push");
+		READ_INSTR1(O_POP,   "pop");
+		READ_INSTR1(O_JMP,   "jmp");
+		READ_INSTR1(O_JE,    "je"); READ_INSTR1(O_JNE,   "jne");
+		READ_INSTR1(O_JS,    "js"); READ_INSTR1(O_JNS,   "jns");
+		READ_INSTR1(O_JA,    "ja"); READ_INSTR1(O_JAE,   "jae");
+		READ_INSTR1(O_JB,    "jb"); READ_INSTR1(O_JBE,   "jbe");
+		READ_INSTR1(O_JL,    "jl"); READ_INSTR1(O_JLE,   "jle");
+		READ_INSTR1(O_JG,    "jg"); READ_INSTR1(O_JGE,   "jge");
+		READ_INSTR1(O_CALL,  "call");
+		READ_INSTR1(O_NOT,   "not");
+		READ_INSTR1(O_NEG,   "neg");
+		READ_INSTR2(O_ADD,   "add");
+		READ_INSTR2(O_SUB,   "sub");
+		READ_INSTR2(O_MUL,   "mul");
+		READ_INSTR2(O_DIV,   "div");
+		READ_INSTR2(O_AND,   "and");
+		READ_INSTR2(O_OR,    "or");
+		READ_INSTR2(O_XOR,   "xor");
+		READ_INSTR2(O_SAR,   "sar");
+		READ_INSTR2(O_SAL,   "sal");
+		READ_INSTR2(O_SHR,   "shr");
+		READ_INSTR2(O_SHL,   "shl");
+		READ_INSTR2(O_TEST,  "test");
+		READ_INSTR2(O_CMP,   "cmp");
+		READ_INSTR2(O_XCHG,  "xchg");
+		READ_INSTR2(O_MOV,   "mov");
+		READ_INSTR2(O_LEA,   "lea");
 
 		fprintf(stderr, "Unknown instruction '%s'\n", orig);
 	}
@@ -330,20 +329,13 @@ int print_reg(char* str, size_t size, reg_t reg, size_t s)
 	else if (s == 32)
 		PRTCHK(snprintf, "e")
 
-	if (reg <= 4)
-		PRTCHK(snprintf, "%cx", 'a'-1 + reg)
-	else if (reg == 9)
-		PRTCHK(snprintf, "sp")
-	else if (reg == 10)
-		PRTCHK(snprintf, "bp")
-	else if (reg == 11)
-		PRTCHK(snprintf, "si")
-	else if (reg == 12)
-		PRTCHK(snprintf, "di")
-	else if (reg == 13)
-		PRTCHK(snprintf, "zi")
-	else
-		PRTCHK(snprintf, "?")
+	if      (reg <=  4) PRTCHK(snprintf, "%cx", 'a'-1 + reg)
+	else if (reg ==  9) PRTCHK(snprintf, "sp")
+	else if (reg == 10) PRTCHK(snprintf, "bp")
+	else if (reg == 11) PRTCHK(snprintf, "si")
+	else if (reg == 12) PRTCHK(snprintf, "di")
+	else if (reg == 13) PRTCHK(snprintf, "zi")
+	else                PRTCHK(snprintf, "?")
 
 	return ret;
 }
@@ -425,47 +417,41 @@ int print_instr(char* str, size_t size, instr_t* i)
 	if (i->label)
 		PRTCHK(snprintf, "<%s>:\n", i->label)
 
-	if (i->op == UNK)
+	if (i->op == O_UNK)
 		PRTCHK(snprintf, "=> %s", i->orig)
 
-	PRINT_INSTR0(NOP,   "nop");
-	PRINT_INSTR0(RET,   "ret");
-	PRINT_INSTR0(LEAVE, "leave");
-	PRINT_INSTR0(HLT,   "hlt");
-	PRINT_INSTR1(PUSH,  "push");
-	PRINT_INSTR1(POP,   "pop");
-	PRINT_INSTR1(JMP,   "jmp");
-	PRINT_INSTR1(JE,    "je");
-	PRINT_INSTR1(JNE,   "jne");
-	PRINT_INSTR1(JA,    "ja");
-	PRINT_INSTR1(JAE,   "jae");
-	PRINT_INSTR1(JB,    "jb");
-	PRINT_INSTR1(JBE,   "jbe");
-	PRINT_INSTR1(JS,    "js");
-	PRINT_INSTR1(JNS,   "jns");
-	PRINT_INSTR1(JL,    "jl");
-	PRINT_INSTR1(JLE,   "jle");
-	PRINT_INSTR1(JG,    "jg");
-	PRINT_INSTR1(JGE,   "jge");
-	PRINT_INSTR1(CALL,  "call");
-	PRINT_INSTR1(NOT,   "not");
-	PRINT_INSTR1(NEG,   "neg");
-	PRINT_INSTR2(ADD,   "add");
-	PRINT_INSTR2(SUB,   "sub");
-	PRINT_INSTR2(MUL,   "mul");
-	PRINT_INSTR2(DIV,   "div");
-	PRINT_INSTR2(AND,   "and");
-	PRINT_INSTR2(OR,    "or");
-	PRINT_INSTR2(XOR,   "xor");
-	PRINT_INSTR2(SAR,   "sar");
-	PRINT_INSTR2(SAL,   "sal");
-	PRINT_INSTR2(SHR,   "shr");
-	PRINT_INSTR2(SHL,   "shl");
-	PRINT_INSTR2(TEST,  "test");
-	PRINT_INSTR2(CMP,   "cmp");
-	PRINT_INSTR2(XCHG,  "xchg");
-	PRINT_INSTR2(MOV,   "mov");
-	PRINT_INSTR2(LEA,   "lea");
+	PRINT_INSTR0(O_NOP,   "nop");
+	PRINT_INSTR0(O_RET,   "ret");
+	PRINT_INSTR0(O_LEAVE, "leave");
+	PRINT_INSTR0(O_HLT,   "hlt");
+	PRINT_INSTR1(O_PUSH,  "push");
+	PRINT_INSTR1(O_POP,   "pop");
+	PRINT_INSTR1(O_JMP,   "jmp");
+	PRINT_INSTR1(O_JE,    "je"); PRINT_INSTR1(O_JNE,   "jne");
+	PRINT_INSTR1(O_JS,    "js"); PRINT_INSTR1(O_JNS,   "jns");
+	PRINT_INSTR1(O_JA,    "ja"); PRINT_INSTR1(O_JAE,   "jae");
+	PRINT_INSTR1(O_JB,    "jb"); PRINT_INSTR1(O_JBE,   "jbe");
+	PRINT_INSTR1(O_JL,    "jl"); PRINT_INSTR1(O_JLE,   "jle");
+	PRINT_INSTR1(O_JG,    "jg"); PRINT_INSTR1(O_JGE,   "jge");
+	PRINT_INSTR1(O_CALL,  "call");
+	PRINT_INSTR1(O_NOT,   "not");
+	PRINT_INSTR1(O_NEG,   "neg");
+	PRINT_INSTR2(O_ADD,   "add");
+	PRINT_INSTR2(O_SUB,   "sub");
+	PRINT_INSTR2(O_MUL,   "mul");
+	PRINT_INSTR2(O_DIV,   "div");
+	PRINT_INSTR2(O_AND,   "and");
+	PRINT_INSTR2(O_OR,    "or");
+	PRINT_INSTR2(O_XOR,   "xor");
+	PRINT_INSTR2(O_SAR,   "sar");
+	PRINT_INSTR2(O_SAL,   "sal");
+	PRINT_INSTR2(O_SHR,   "shr");
+	PRINT_INSTR2(O_SHL,   "shl");
+	PRINT_INSTR2(O_TEST,  "test");
+	PRINT_INSTR2(O_CMP,   "cmp");
+	PRINT_INSTR2(O_XCHG,  "xchg");
+	PRINT_INSTR2(O_MOV,   "mov");
+	PRINT_INSTR2(O_LEA,   "lea");
 
 	PRTCHK(snprintf, "\n");
 

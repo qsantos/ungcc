@@ -8,24 +8,25 @@
 // opcode
 typedef enum
 {
-	UNK,  // unknown
+	O_UNK,  // unknown
 
 	// no parameter
-	NOP,  RET, LEAVE, HLT,
+	O_NOP,  O_RET, O_LEAVE, O_HLT,
 
 	// unary instructions
-	PUSH, POP,
-	JMP,
-	JE, JNE,   JA, JAE,   JB, JBE,   JS, JNS,   JL, JLE,   JG, JGE,
-	CALL,
-	NOT,  NEG,
+	O_PUSH, O_POP,
+	O_JMP,
+	O_JE, O_JS, O_JA, O_JB, O_JL, O_JG,
+	O_JNE,O_JNS,O_JAE,O_JBE,O_JLE,O_JGE,
+	O_CALL,
+	O_NOT,  O_NEG,
 
 	// binary instructions
-	ADD,  SUB, MUL, DIV,
-	AND,  OR,  XOR,
-	SAR,  SAL, SHR, SHL,
-	TEST, CMP,
-	XCHG, MOV,  LEA,
+	O_ADD,  O_SUB, O_MUL, O_DIV,
+	O_AND,  O_OR,  O_XOR,
+	O_SAR,  O_SAL, O_SHR, O_SHL,
+	O_TEST, O_CMP,
+	O_XCHG, O_MOV,  O_LEA,
 } opcode_t;
 
 // operand

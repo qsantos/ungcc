@@ -23,33 +23,33 @@ size_t block_line(char* str, size_t size, instr_t* instr, size_t n_instr)
 
 	opcode_t op = instr->op;
 
-	if (op == NOP || op == JMP || op == CMP || op == TEST)
+	if (op == O_NOP || op == O_JMP || op == O_CMP || op == O_TEST)
 	{
 //		*str = 0;
 //		return 1;
 	}
 
-	if (op == XCHG && cmp_op(&instr->a, &instr->b) == 0)
+	if (op == O_XCHG && cmp_op(&instr->a, &instr->b) == 0)
 	{
 		*str = 0;
 		return 1;
 	}
 
-	if (op == JE || op == JNE)
+	if (op == O_JE || op == O_JNE)
 	{
 		size_t ret = 0;
-		for (; instr->op != CMP && instr->op != TEST; instr--);
+		for (; instr->op != O_CMP && instr->op != O_TEST; instr--);
 		PRTCHK(snprintf, "if (");
-		if (instr->op == CMP)
+		if (instr->op == O_CMP)
 		{
 			PRTCHK(print_op, &instr->b, instr->s);
-			if (op == JE)
+			if (op == O_JE)
 				PRTCHK(snprintf, " == ")
-			else if (op == JNE)
+			else if (op == O_JNE)
 				PRTCHK(snprintf, " != ")
 			PRTCHK(print_op, &instr->a, instr->s);
 		}
-		else // TEST
+		else // O_TEST
 		{
 			PRTCHK(print_op, &instr->b, instr->s);
 			if (cmp_op(&instr->a, &instr->b) != 0)
