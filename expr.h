@@ -7,7 +7,7 @@
 // operand
 typedef unsigned char reg_t; // value in register
 typedef ssize_t       im_t;  // immediate value
-typedef struct             // value at address
+typedef struct               // value at address
 {
 	reg_t  base;  // base register
 	reg_t  idx;   // index register
@@ -28,6 +28,8 @@ typedef struct
 		im_t   im;
 		addr_t addr;
 	} v;
+
+	char* symbol;
 } operand_t;
 
 typedef enum
@@ -67,6 +69,7 @@ struct expr
 		struct {expr_t* a;           } uni;
 		struct {expr_t* a; expr_t* b;} bin;
 	} v;
+	char* label;
 
 	// hierarchy information
 	bool    isFun;

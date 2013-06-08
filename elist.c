@@ -99,15 +99,15 @@ char* read_operand(expr_t** dst, size_t* sz, char* str)
 	{
 		im_t im = strtoul(str, (char**) &str, 16);
 		*dst = e_op_im(im);
-/*
+
 		// read symbol
 		if (strchr(str, '+') == NULL) // no offset
 		{
 			str += 2; // " <"
-			char* end = strchr(str, '>');
-			dst->symbol = strndup(str, end - str);
+			char* end = strchr(str, '@');
+			if (!end) end = strchr(str, '>');
+			(*dst)->v.op.symbol = strndup(str, end - str);
 		}
-*/
 		return str;
 	}
 	else if (str[0] == '*') // indirect address
@@ -219,7 +219,7 @@ void read_file(elist_t* dst, FILE* f)
 {
 	elist_new(dst);
 
-//	char* label = NULL;;
+	char*   label  = NULL;
 	char*   line   = NULL;
 	size_t  n_line = 0;
 	while (1)
@@ -229,7 +229,6 @@ void read_file(elist_t* dst, FILE* f)
 			break;
 		line[n_read-1] = 0;
 
-/*
 		// label
 		if (line[0] == '0')
 		{
@@ -239,7 +238,6 @@ void read_file(elist_t* dst, FILE* f)
 			label = strdup(label);
 			continue;
 		}
-*/
 
 		// not instruction
 		if (line[0] != ' ')
@@ -258,7 +256,11 @@ void read_file(elist_t* dst, FILE* f)
 
 		expr_t* e = read_instr(part);
 		if (e)
+		{
+			e->label = label;
+			label = NULL;
 			elist_push(dst, offset, e);
+		}
 	}
 
 	free(line);

@@ -6,6 +6,7 @@
 expr_t* e_new()
 {
 	expr_t* ret = malloc(sizeof(expr_t));
+	ret->label   = NULL;
 	ret->isFun   = false;
 	ret->endBlck = false;
 	ret->next    = NULL;
@@ -58,7 +59,8 @@ expr_t* e_op_reg(reg_t reg)
 	expr_t* ret = e_new();
 	ret->type   = E_OPERAND;
 	ret->v.op.t = REG;
-	ret->v.op.v.reg = reg;
+	ret->v.op.v.reg  = reg;
+	ret->v.op.symbol = NULL;
 	return ret;
 }
 
@@ -67,7 +69,8 @@ expr_t* e_op_im(im_t im)
 	expr_t* ret = e_new();
 	ret->type   = E_OPERAND;
 	ret->v.op.t = IM;
-	ret->v.op.v.im = im;
+	ret->v.op.v.im   = im;
+	ret->v.op.symbol = NULL;
 	return ret;
 }
 
@@ -80,6 +83,7 @@ expr_t* e_op_addr(reg_t base, reg_t idx, im_t scale, im_t disp)
 	ret->v.op.v.addr.idx   = idx;
 	ret->v.op.v.addr.scale = scale;
 	ret->v.op.v.addr.disp  = disp;
+	ret->v.op.symbol = NULL;
 	return ret;
 }
 

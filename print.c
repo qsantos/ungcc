@@ -45,13 +45,11 @@ size_t print_op(char* str, size_t size, operand_t* op, size_t s)
 {
 	size_t ret = 0;
 
-/*
 	if (op->symbol)
 	{
 		PRTCHK(snprintf, "%s", op->symbol);
 		return ret;
 	}
-*/
 
 	if (op->t == REG)
 		PRTCHK(print_reg, op->v.reg, s)
@@ -116,10 +114,8 @@ size_t print_expr(char* str, size_t size, expr_t* e)
 	size_t ret = 0;
 	*str = 0;
 
-/*
 	if (e->label)
-		PRTCHK(snprintf, "<%s>:\n", i->label)
-*/
+		PRTCHK(snprintf, "<%s>:\n", e->label)
 
 	if (e->type == E_OPERAND)
 	{
@@ -143,9 +139,15 @@ size_t print_expr(char* str, size_t size, expr_t* e)
 	PRINT_EXPR1(E_JB,    "jb");   PRINT_EXPR1(E_JBE,   "jbe");
 	PRINT_EXPR1(E_JL,    "jl");   PRINT_EXPR1(E_JLE,   "jle");
 	PRINT_EXPR1(E_JG,    "jg");   PRINT_EXPR1(E_JGE,   "jge");
-	PRINT_EXPR1(E_CALL,  "call");
 	PRINT_EXPR1(E_NOT,   "!");
 	PRINT_EXPR1(E_NEG,   "~");
+
+	if (e->type == E_CALL)
+	{
+		PRTCHK(print_expr, e->v.bin.a);
+		PRTCHK(snprintf, "()");
+		return ret;
+	}
 
 	// binary
 	PRINT_EXPR2(E_ADD,   "+");
