@@ -88,26 +88,20 @@ size_t print_op(char* str, size_t size, operand_t* op, size_t s)
 	return ret;
 }
 
-#define PRINT_EXPR0(O,N) if (e->type==O) \
-{ \
+#define PRINT_EXPR0(O,N) case O: \
 	PRTCHK(snprintf, N); \
-	return ret; \
-}
+	break;
 
-#define PRINT_EXPR1(O,N) if (e->type==O) \
-{ \
+#define PRINT_EXPR1(O,N) case O: \
 	PRTCHK(snprintf, N " "); \
 	PRTCHK(print_expr, e->v.bin.a); \
-	return ret; \
-}
+	break;
 
-#define PRINT_EXPR2(O,N) if (e->type==O) \
-{ \
+#define PRINT_EXPR2(O,N) case O: \
 	PRTCHK(print_expr, e->v.bin.a); \
 	PRTCHK(snprintf, " " N " "); \
 	PRTCHK(print_expr, e->v.bin.b); \
-	return ret; \
-}
+	break;
 
 size_t print_expr(char* str, size_t size, expr_t* e)
 {
@@ -124,6 +118,8 @@ size_t print_expr(char* str, size_t size, expr_t* e)
 	}
 
 	// TODO should be a switch
+	switch (e->type)
+	{
 	// zeroary
 	PRINT_EXPR0(E_NOP,   "nop");
 	PRINT_EXPR0(E_RET,   "ret");
@@ -142,12 +138,10 @@ size_t print_expr(char* str, size_t size, expr_t* e)
 	PRINT_EXPR1(E_NOT,   "!");
 	PRINT_EXPR1(E_NEG,   "~");
 
-	if (e->type == E_CALL)
-	{
+	case E_CALL:
 		PRTCHK(print_expr, e->v.bin.a);
 		PRTCHK(snprintf, "()");
-		return ret;
-	}
+		break;
 
 	// binary
 	PRINT_EXPR2(E_ADD,   "+");
@@ -167,8 +161,10 @@ size_t print_expr(char* str, size_t size, expr_t* e)
 	PRINT_EXPR2(E_XCHG,  "↔");
 	PRINT_EXPR2(E_MOV,   "=");
 	PRINT_EXPR2(E_LEA,   "=&");
+	default:
+		PRTCHK(snprintf, "Unknown %zu\n", e->type);
+	}
 
-	PRTCHK(snprintf, "Unknown %zu\n", e->type);
 	return ret;
 }
 

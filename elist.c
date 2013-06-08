@@ -278,7 +278,7 @@ size_t functions(elist_t* dst, elist_t* l, size_t entryPoint)
 	for (; p->e->type != E_CALL; p++);
 	p--;
 	expr_t* op = p->e->v.uni.a;
-	if (p->e->type != E_PUSH || !op || op->type != E_OPERAND || op->v.op.t != IM) // TODO
+	if (p->e->type != E_PUSH || !op || op->type != E_OPERAND || op->v.op.t != IM)
 	{
 		fprintf(stderr, "Unexpected instruction:\n");
 		fprint_stat(stderr, p->e);
@@ -317,8 +317,6 @@ size_t functions(elist_t* dst, elist_t* l, size_t entryPoint)
 			p->e->isFun = true;
 		else
 		{
-			if (op->v.op.v.im == 0x8049047) // TODO
-				printf("===== %p\n", (void*) p->e);
 			e->endBlck = true;
 			e->branch = p->e;
 			(p-1)->e->endBlck = true;
