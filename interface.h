@@ -1,8 +1,8 @@
 #ifndef INTERFACE_H
 #define INTERFACE_H
 
-#include "block.h"
+#include "expr.h"
 
-void zui(int argc, char** argv, block_t* fun, size_t len);
+void zui(int argc, char** argv, expr_t* fun);
 
 #endif

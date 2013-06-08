@@ -1,6 +1,7 @@
+#include <stdlib.h>
 #include <time.h>
 
-#include "block.h"
+#include "elist.h"
 #include "interface.h"
 
 static void usage(const char* name)
@@ -38,113 +39,16 @@ int main(int argc, char** argv)
 		usage(name);
 	}
 
-	// reads dump
-	asm_t asm;
-	read_file(&asm, input);
-	fclose(input);
+	elist_t el; // expression list
+	elist_t fl; // function list
 
-	// reads _start() to find main() address
-	instr_t* i = asm_find_at(&asm, entryPoint);
-	if (!i)
-		fprintf(stderr, "No such instruction: %#x\n\n", entryPoint);
-	i->function = true;
-	for (; i->op != O_CALL; i++);
-	i--;
-	if (i->op != O_PUSH || i->a.t != IM)
-	{
-		fprintf(stderr, "Unexpected instruction:\n");
-		fprint_instr(stderr, i);
-		exit(1);
-	}
-	size_t mainAddr = i->a.v.im;
-	i = asm_find_at(&asm, mainAddr);
-	if (!i)
-	{
-		fprintf(stderr, "Could not find main() at address %#x\n", mainAddr);
-		exit(1);
-	}
-	i->function = true;
+	read_file(&el, input);
+	size_t main_idx = functions(&fl, &el, entryPoint);
+	expr_t* e = fl.e[main_idx].e;
+	zui(argc, argv, e);
 
-	// mark block and function beginnings
-	for (size_t k = 0; k < asm.n; k++)
-	{
-		instr_t* i = asm.i + k;
-		if (i->a.t != IM)
-			continue;
+	elist_del(&fl);
+	elist_del(&el);
 
-		if (i->op == O_CALL)
-		{
-			if ((i = asm_find_at(&asm, i->a.v.im)))
-				i->function = true;
-		}
-		else if (O_JMP <= i->op && i->op <= O_JGE) // jump instruction
-		{
-			if ((i = asm_find_at(&asm, i->a.v.im)))
-				i->branch = true;
-		}
-	}
-
-	// find blocks
-	blist_t blist;
-	blist_new(&blist);
-	size_t start = 0;
-	for (size_t k = 1; k < asm.n; k++)
-	{
-		instr_t* i = asm.i + k;
-
-		size_t end;
-		if (i->function || i->branch) // block beginning
-			end = k-1;
-		else if ((O_RET <= i->op && i->op <= O_HLT) || // function end // TODO
-		         (O_JMP <= i->op && i->op <= O_JGE))   // jump instruction
-		{
-			end = k;
-		}
-		else
-			continue;
-
-		if (start > end)
-			continue;
-
-		blist_push(&blist, asm.i + start, end-start+1);
-		start = end+1;
-	}
-
-	// find hierarchy
-	functions_t funs;
-	funs_new(&funs);
-	for (size_t k = 0; k < blist.n; k++)
-	{
-		block_t* b = blist.b + k;
-		if (b->start->function)
-			funs_push(&funs, b);
-		instr_t* i = b->start + b->size-1;
-
-		b->branch = NULL;
-		if (O_JMP <= i->op && i->op <= O_JGE && i->a.t == IM) // jump instruction at immediate address
-		{
-			b->branch = blist_search(&blist, i->a.v.im);
-
-			if (!b->branch)
-			{
-				fprintf(stderr, "Instruction jumps to unknown offset %#x\n", i->a.v.im);
-				fprint_instr(stderr, i);
-			}
-		}
-
-		if ((i->op <= O_RET && i->op <= O_HLT) || i->op == O_JMP) // function end or inconditionnal jump
-			b->next = NULL;
-		else if (k < blist.n-1 && (b+1)->start->function == false)
-			b->next = b+1;
-		else
-			b->next = NULL;
-	}
-
-	size_t k = 1;//rand() % funs.n;
-	block_t* fun = funs.f[k];
-	size_t len = (k < funs.n ? funs.f[k+1] : blist.b+blist.n) - fun;
-	zui(argc, argv, fun, len);
-
-	blist_del(&blist);
 	return 0;
 }

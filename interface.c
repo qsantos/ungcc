@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "graph.h"
+#include "print.h"
 
 #define CURSOR_SZ 1
 
@@ -27,9 +28,9 @@ static double viewZoom = 1;
 static const double blockScale = 0.1;
 static const double blockPadding = 20;
 
-static block_t* fun;
-static size_t        funlen;
+static expr_t*  function;
 static block_t* curBlock;
+static blist_t  blocks;
 
 static size_t countChars(const char* str, char c)
 {
@@ -42,89 +43,84 @@ static size_t countChars(const char* str, char c)
 
 #define BUFSIZE   1024
 #define FONT      GLUT_STROKE_MONO_ROMAN
-// sets the height and width of blocks
-static inline void initDim(block_t* b, size_t n)
+static inline void blist_setdim(blist_t* l)
 {
-	for (; n; n--, b++)
+	for (size_t i = 0; i < l->n; i++)
 	{
+		block_t* b = l->b+i;
+
 		double maxWidth = 0;
 		size_t lines = 0;
-
-		instr_t* instr = b->start;
-		size_t        size  = b->size;
-		while (true)
+		for (expr_t* e = b->e; e; e = e->next)
 		{
 			char glText[BUFSIZE];
-			size_t ret = block_line(glText, BUFSIZE, instr, size);
+			size_t ret = print_stat(glText, BUFSIZE, e);
 			if (ret == 0)
 				break;
 
-			instr += ret;
-			size  -= ret;
-
-			double textWidth = glutStrokeLength(FONT, (unsigned char*) glText);
-			if (textWidth > maxWidth)
-				maxWidth = textWidth;
+			double curWidth = glutStrokeLength(FONT, (unsigned char*) glText);
+			if (curWidth > maxWidth)
+				maxWidth = curWidth; 
 			lines += countChars(glText, '\n');
+
+			if (e->branch)
+				break;
 		}
 		b->w = blockScale * maxWidth;
 		b->h = blockScale * lines * glutStrokeHeight(FONT);
 	}
 }
-static void displayBlock(block_t* b)
+static void blist_display(blist_t* l)
 {
-	if (!b || b->visited) return;
-	b->visited = true;
-
-	glPushMatrix();
-	glTranslatef(b->x, b->y, 0);
-
-	int unselected = b != curBlock;
-	glColor4f(1, unselected, unselected, 1);
-
-	const double p = blockPadding;
-	glBegin(GL_LINE_LOOP);
-		glVertex2f(    -p,     -p);
-		glVertex2f(b->w+p,     -p);
-		glVertex2f(b->w+p, b->h+p);
-		glVertex2f(    -p, b->h+p);
-	glEnd();
-
-	glScalef(blockScale, -blockScale, blockScale);
-	instr_t* instr = b->start;
-	size_t        size  = b->size;
-	while (true)
+	for (size_t i = 0; i < l->n; i++)
 	{
-		char glText[BUFSIZE];
-		size_t ret = block_line(glText, BUFSIZE, instr, size);
-		if (ret == 0)
-			break;
+		block_t* b = l->b+i;
+		glPushMatrix();
+		glTranslatef(b->x, b->y, 0);
 
-		instr += ret;
-		size  -= ret;
-		glutStrokeString(FONT, (unsigned char*) glText);
+		int unselected = b != curBlock;
+		glColor4f(1, unselected, unselected, 1);
+
+		const double p = blockPadding;
+		glBegin(GL_LINE_LOOP);
+			glVertex2f(    -p,     -p);
+			glVertex2f(b->w+p,     -p);
+			glVertex2f(b->w+p, b->h+p);
+			glVertex2f(    -p, b->h+p);
+		glEnd();
+
+		glScalef(blockScale, -blockScale, blockScale);
+		for (expr_t* e = b->e; e; e = e->next)
+		{
+			char glText[BUFSIZE];
+			size_t ret = print_stat(glText, BUFSIZE, e);
+			if (ret == 0)
+				break;
+
+			glutStrokeString(FONT, (unsigned char*) glText);
+
+			if (e->branch)
+				break;
+		}
+
+		glPopMatrix();
+
+		glBegin(GL_LINES);
+		if (b->next)
+		{
+			block_t* c = b->next;
+			glVertex2f(b->x + b->w/2, b->y + b->h + p);
+			glVertex2f(c->x + c->w/2, c->y - p);
+		}
+		if (b->branch)
+		{
+			block_t* c = b->branch;
+			glColor4f(unselected, 1, 0, 1);
+			glVertex2f(b->x + b->w/2, b->y + b->h + p);
+			glVertex2f(c->x + c->w/2, c->y - p);
+		}
+		glEnd();
 	}
-
-	glPopMatrix();
-
-	glBegin(GL_LINES);
-	if (b->next)
-	{
-		block_t* c = b->next;
-		glVertex2f(b->x + b->w/2, b->y + b->h + p);
-		glVertex2f(c->x + c->w/2, c->y - p);
-	}
-	if (b->branch)
-	{
-		glColor4f(unselected, 1, 0, 1);
-		block_t* c = b->branch;
-		glVertex2f(b->x + b->w/2, b->y + b->h + p);
-		glVertex2f(c->x + c->w/2, c->y - p);
-	}
-	glEnd();
-
-	displayBlock(b->next);
-	displayBlock(b->branch);
 }
 
 static void cb_displayFunc()
@@ -136,9 +132,7 @@ static void cb_displayFunc()
 	glScalef(viewZoom, viewZoom, viewZoom);
 	glTranslatef(-viewX, -viewY, 0);
 
-	for (size_t k = 0; k < funlen; k++)
-		fun[k].visited = false;
-	displayBlock(fun);
+	blist_display(&blocks);
 
 	glPushMatrix();
 	glLoadIdentity();
@@ -176,7 +170,7 @@ static void cb_keyboardFunc(unsigned char key, int x, int y)
 
 	if (key == 'r')
 	{
-		spreadNodes(fun, funlen);
+		blist_spread(&blocks);
 		glutPostRedisplay();
 	}
 }
@@ -201,9 +195,9 @@ static void cb_mouseFunc(int button, int state, int _x, int _y)
 		// find closest block
 		double d_min = -1;
 		block_t* b_min = NULL;
-		for (size_t k = 0; k < funlen; k++)
+		for (size_t i = 0; i < blocks.n; i++)
 		{
-			block_t* b = fun+k;
+			block_t* b = blocks.b + i;;
 			double dx = x - b->x;
 			double dy = y - b->y;
 			double d = dx*dx + dy*dy;
@@ -258,12 +252,8 @@ static void glInit()
 //	glTranslatef(0.375, 0.375, 0); // hack against pixel centered coordinates
 }
 
-void zui(int argc, char** argv, block_t* _fun, size_t len)
+void zui(int argc, char** argv, expr_t* fun)
 {
-	fun      = _fun;
-	funlen   = len;
-	curBlock = fun;
-
 	glutInit(&argc, argv);
 	glutInitWindowSize(winWidth, winHeight);
 	winId = glutCreateWindow("Execution graph");
@@ -277,10 +267,15 @@ void zui(int argc, char** argv, block_t* _fun, size_t len)
 	glutPassiveMotionFunc(&cb_passiveMotionFunc);
 
 	glInit();
-	initDim(fun, funlen);
-	spreadNodes(fun, funlen);
-	viewX = fun->x;
-	viewY = fun->y;
+
+	function = fun;
+	blist_gen   (&blocks, function);
+	blist_setdim(&blocks);
+	blist_spread(&blocks);
+
+	curBlock = blocks.b;
+	viewX = curBlock->x;
+	viewY = curBlock->y;
 
 	glutMainLoop();
 }

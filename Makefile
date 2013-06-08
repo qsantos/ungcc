@@ -1,11 +1,11 @@
 CC      = gcc
-CFLAGS  = -Wall -Wextra -Werror -pedantic -ansi -std=c99 -O3 -D_XOPEN_SOURCE=700 -g
+CFLAGS  = -Wall -Wextra -Werror -pedantic -ansi -std=c99 -O3 -D_XOPEN_SOURCE=700
 LDFLAGS = -O3 -lm -lGL -lGLU -lglut
 TARGETS = ungcc
 
 all: $(TARGETS)
 
-ungcc: main.o asm.o expr.o block.o interface.o graph.o
+ungcc: main.o expr.o elist.o print.o interface.o graph.o
 	$(CC) $(LDFLAGS) $^ -o $@
 
 %.o: %.c
