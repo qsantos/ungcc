@@ -7,24 +7,30 @@ size_t print_reg(char* str, size_t size, reg_t reg, size_t s)
 	size_t ret = 0;
 
 	PRTCHK(snprintf, "%%");
-	if (s == 8)
-	{
-		PRTCHK(snprintf, "%c%c", 'a' + ((reg-1)%4), reg < 4 ? 'h' : 'l');
-		return ret;
-	}
 
 	if (s == 64)
 		PRTCHK(snprintf, "s")
 	else if (s == 32)
 		PRTCHK(snprintf, "e")
 
-	if      (reg <=  4) PRTCHK(snprintf, "%cx", 'a'-1 + reg)
-	else if (reg ==  9) PRTCHK(snprintf, "sp")
-	else if (reg == 10) PRTCHK(snprintf, "bp")
-	else if (reg == 11) PRTCHK(snprintf, "si")
-	else if (reg == 12) PRTCHK(snprintf, "di")
-	else if (reg == 13) PRTCHK(snprintf, "zi")
-	else                PRTCHK(snprintf, "?")
+	if      (reg == R_IZ) PRTCHK(snprintf, "zi")
+	else if (reg == R_AX) PRTCHK(snprintf, "ax")
+	else if (reg == R_BX) PRTCHK(snprintf, "bx")
+	else if (reg == R_CX) PRTCHK(snprintf, "cx")
+	else if (reg == R_DX) PRTCHK(snprintf, "dx")
+	else if (reg == R_AL) PRTCHK(snprintf, "al")
+	else if (reg == R_BL) PRTCHK(snprintf, "bl")
+	else if (reg == R_CL) PRTCHK(snprintf, "cl")
+	else if (reg == R_DL) PRTCHK(snprintf, "dl")
+	else if (reg == R_AH) PRTCHK(snprintf, "ah")
+	else if (reg == R_BH) PRTCHK(snprintf, "bh")
+	else if (reg == R_CH) PRTCHK(snprintf, "ch")
+	else if (reg == R_DH) PRTCHK(snprintf, "dh")
+	else if (reg == R_SP) PRTCHK(snprintf, "sp")
+	else if (reg == R_BP) PRTCHK(snprintf, "bp")
+	else if (reg == R_SI) PRTCHK(snprintf, "si")
+	else if (reg == R_DI) PRTCHK(snprintf, "di")
+	else                  PRTCHK(snprintf, "?")
 
 	return ret;
 }
@@ -121,21 +127,21 @@ size_t print_expr(char* str, size_t size, expr_t* e)
 	switch (e->type)
 	{
 	// zeroary
-	PRINT_EXPR0(E_NOP,   "nop");
-	PRINT_EXPR0(E_RET,   "ret");
-	PRINT_EXPR0(E_HLT,   "hlt");
+	PRINT_EXPR0(E_NOP, "nop");
+	PRINT_EXPR0(E_RET, "ret");
+	PRINT_EXPR0(E_HLT, "hlt");
 
 	// unary
-	PRINT_EXPR1(E_PUSH,  "push"); PRINT_EXPR1(E_POP,   "pop");
-	PRINT_EXPR1(E_JMP,   "jmp");
-	PRINT_EXPR1(E_JE,    "je");   PRINT_EXPR1(E_JNE,   "jne");
-	PRINT_EXPR1(E_JS,    "js");   PRINT_EXPR1(E_JNS,   "jns");
-	PRINT_EXPR1(E_JA,    "ja");   PRINT_EXPR1(E_JAE,   "jae");
-	PRINT_EXPR1(E_JB,    "jb");   PRINT_EXPR1(E_JBE,   "jbe");
-	PRINT_EXPR1(E_JL,    "jl");   PRINT_EXPR1(E_JLE,   "jle");
-	PRINT_EXPR1(E_JG,    "jg");   PRINT_EXPR1(E_JGE,   "jge");
-	PRINT_EXPR1(E_NOT,   "!");
-	PRINT_EXPR1(E_NEG,   "~");
+	PRINT_EXPR1(E_PUSH, "push"); PRINT_EXPR1(E_POP, "pop");
+	PRINT_EXPR1(E_JMP,  "jmp");
+	PRINT_EXPR1(E_JE,   "je");   PRINT_EXPR1(E_JNE, "jne");
+	PRINT_EXPR1(E_JS,   "js");   PRINT_EXPR1(E_JNS, "jns");
+	PRINT_EXPR1(E_JA,   "ja");   PRINT_EXPR1(E_JAE, "jae");
+	PRINT_EXPR1(E_JB,   "jb");   PRINT_EXPR1(E_JBE, "jbe");
+	PRINT_EXPR1(E_JL,   "jl");   PRINT_EXPR1(E_JLE, "jle");
+	PRINT_EXPR1(E_JG,   "jg");   PRINT_EXPR1(E_JGE, "jge");
+	PRINT_EXPR1(E_NOT,  "!");
+	PRINT_EXPR1(E_NEG,  "~");
 
 	case E_CALL:
 		PRTCHK(print_expr, e->v.bin.a);
@@ -143,23 +149,23 @@ size_t print_expr(char* str, size_t size, expr_t* e)
 		break;
 
 	// binary
-	PRINT_EXPR2(E_ADD,   "+");
-	PRINT_EXPR2(E_SUB,   "-");
-	PRINT_EXPR2(E_SBB,   "-'"); // TODO
-	PRINT_EXPR2(E_MUL,   "*");
-	PRINT_EXPR2(E_DIV,   "/");
-	PRINT_EXPR2(E_AND,   "&");
-	PRINT_EXPR2(E_OR,    "|");
-	PRINT_EXPR2(E_XOR,   "^");
-	PRINT_EXPR2(E_SAR,   ">>");
-	PRINT_EXPR2(E_SAL,   "<<");
-	PRINT_EXPR2(E_SHR,   ">>'"); // TODO
-	PRINT_EXPR2(E_SHL,   "<<'"); // TODO
-	PRINT_EXPR2(E_TEST,  "==");
-	PRINT_EXPR2(E_CMP,   "=='"); // TODO
-	PRINT_EXPR2(E_XCHG,  "↔");
-	PRINT_EXPR2(E_MOV,   "=");
-	PRINT_EXPR2(E_LEA,   "=&");
+	PRINT_EXPR2(E_ADD,  "+");
+	PRINT_EXPR2(E_SUB,  "-");
+	PRINT_EXPR2(E_SBB,  "-'"); // TODO
+	PRINT_EXPR2(E_MUL,  "*");
+	PRINT_EXPR2(E_DIV,  "/");
+	PRINT_EXPR2(E_AND,  "&");
+	PRINT_EXPR2(E_OR,   "|");
+	PRINT_EXPR2(E_XOR,  "^");
+	PRINT_EXPR2(E_SAR,  ">>");
+	PRINT_EXPR2(E_SAL,  "<<");
+	PRINT_EXPR2(E_SHR,  ">>'"); // TODO
+	PRINT_EXPR2(E_SHL,  "<<'"); // TODO
+	PRINT_EXPR2(E_TEST, "==");
+	PRINT_EXPR2(E_CMP,  "=='"); // TODO
+	PRINT_EXPR2(E_XCHG, "↔");
+	PRINT_EXPR2(E_MOV,  "=");
+	PRINT_EXPR2(E_LEA,  "=&");
 	default:
 		PRTCHK(snprintf, "Unknown %zu\n", e->type);
 	}

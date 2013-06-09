@@ -4,19 +4,16 @@
 #include <sys/types.h>
 #include <stdbool.h>
       
-/*
+// operand
 typedef enum
 {
 	R_IZ,                   // null pseudo-register
 	R_AX, R_BX, R_CX, R_DX, // usual registers (or low parts)
-	R_AL = R_AX,
+	R_AL, R_BL, R_CL, R_DL, // low parts
 	R_AH, R_BH, R_CH, R_DH, // high parts
 	R_SP, R_BP,             // segment and base pointers
-	R_SI, R_DI,             // segment and base indexes,
+	R_SI, R_DI,             // segment and data indexes
 } reg_t;
-*/
-// operand
-typedef size_t  reg_t; // register
 typedef ssize_t im_t;  // immediate value
 typedef struct         // value at address
 {

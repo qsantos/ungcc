@@ -63,12 +63,12 @@ char* read_register(reg_t* dst, size_t* sz, char* str)
 	// register code
 	if (dst)
 	{
-		if      (str[0] == 'i' && str[1] == 'z') *dst = 13;     // iz pseudo-strister (= 0)
-		else if (str[1] == 'x') *dst = str[0] - 'a' + 1;        // ax, bx, cx, dx
-		else if (str[1] == 'h') *dst = str[0] - 'a' + 1;        // ah, bh, ch, dh
-		else if (str[1] == 'l') *dst = str[0] - 'a' + 5;        // al, bl, cl, dl
-		else if (str[1] == 'p') *dst = str[0] == 's' ?  9 : 10; // sp, bp
-		else if (str[1] == 'i') *dst = str[0] == 's' ? 11 : 12; // si, di
+		if      (str[0] == 'i' && str[1] == 'z') *dst = R_IZ;
+		else if (str[1] == 'x') *dst = R_AX + (str[0] - 'a');  // ax, bx, cx, dx
+		else if (str[1] == 'l') *dst = R_AL + (str[0] - 'a');  // al, bl, cl, dl
+		else if (str[1] == 'h') *dst = R_AH + (str[0] - 'a');  // ah, bh, ch, dh
+		else if (str[1] == 'p') *dst = str[0] == 's' ? R_SP : R_BP;
+		else if (str[1] == 'i') *dst = str[0] == 's' ? R_SI : R_DI;
 		else
 		{
 			fprintf(stderr, "Unknown register '%s'\n", str);
@@ -183,8 +183,8 @@ void read_instr(elist_t* dst, size_t of, char* str)
 
 	if (strcmp(opcode, "leave") == 0)
 	{
-		elist_push(dst, of, e_mov(e_op_reg(10), e_op_reg(9)));
-		elist_push(dst, of, e_push(e_op_reg(10)));
+		elist_push(dst, of, e_mov (e_op_reg(R_BP), e_op_reg(R_SP)));
+		elist_push(dst, of, e_push(e_op_reg(R_BP)));
 	}
 
 	if (!str) return;
