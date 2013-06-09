@@ -410,7 +410,7 @@ size_t functions(elist_t* dst, elist_t* l, size_t entryPoint)
 	return ret;
 }
 
-#define POST1(T) case T: postproc_aux1(e->v.bin.a); break;
+#define POST1(T) case T: postproc_aux1(e->v.uni.a); break;
 #define POST2(T) case T: postproc_aux1(e->v.bin.a); postproc_aux1(e->v.bin.b); break;
 
 static void postproc_aux1(expr_t* e)
@@ -443,8 +443,8 @@ static void postproc_aux1(expr_t* e)
 		{
 			e->type = E_OPERAND;
 			memcpy(&e->v.op, &a->v.op, sizeof(operand_t));
-//			e_del(a); // TODO
-//			e_del(b); // TODO
+			e_del(a);
+			e_del(b);
 		}
 		break;
 	}
@@ -459,8 +459,9 @@ static void postproc_aux1(expr_t* e)
 			e->v.op.v.im = 0;
 			e->v.op.symbol = NULL;
 //			e_del(a); // TODO
-//			e_del(b); // TODO
+			e_del(b);
 		}
+		break;
 	}
 
 	default:
