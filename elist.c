@@ -260,11 +260,14 @@ void read_file(elist_t* dst, FILE* f)
 		part = strtok(NULL, "\t"); // assembly code
 		if (!part) continue;
 
+		size_t cur = dst->n;
 		read_instr(dst, offset, part);
-/* TODO
-		e->label = label;
-		label = NULL;
-*/
+		// adds label to first added instruction
+		if (cur < dst->n)
+		{
+			dst->e[cur].e->label = label;
+			label = NULL;
+		}
 	}
 
 	free(line);
