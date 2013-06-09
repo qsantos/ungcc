@@ -28,7 +28,8 @@ char*   read_operand (expr_t** dst, size_t* sz, char* str);
 void    read_instr   (elist_t* dst, size_t  of, char* str);
 void    read_file    (elist_t* dst,             FILE* f);
 
-// returns the index of main() in dst
-size_t functions(elist_t* dst, elist_t* l, size_t entryPoint);
+
+size_t  functions(elist_t* dst, elist_t* l, size_t entryPoint); // returns the index of main() in dst
+void    postproc (expr_t* e);
 
 #endif

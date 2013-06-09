@@ -363,3 +363,65 @@ size_t functions(elist_t* dst, elist_t* l, size_t entryPoint)
 
 	return ret;
 }
+
+#define POST1(T) case T: postproc_aux1(e->v.bin.a); break;
+#define POST2(T) case T: postproc_aux1(e->v.bin.a); postproc_aux1(e->v.bin.b); break;
+
+static void postproc_aux1(expr_t* e)
+{
+	switch (e->type)
+	{
+	// unary
+	POST1(E_PUSH); POST1(E_POP);
+	POST1(E_JMP);
+	POST1(E_JE);   POST1(E_JNE);
+	POST1(E_JS);   POST1(E_JNS);
+	POST1(E_JA);   POST1(E_JAE);
+	POST1(E_JB);   POST1(E_JBE);
+	POST1(E_JL);   POST1(E_JLE);
+	POST1(E_JG);   POST1(E_JGE);
+	POST1(E_CALL);
+	POST1(E_NOT);  POST1(E_NEG);
+
+	// binary
+	POST2(E_ADD);  POST2(E_SUB); POST2(E_SBB); POST2(E_MUL); POST2(E_DIV);
+	POST2(E_AND);  POST2(E_OR);
+	POST2(E_SAR);  POST2(E_SAL); POST2(E_SHR); POST2(E_SHL);
+	POST2(E_TEST); POST2(E_CMP);
+	POST2(E_XCHG); POST2(E_MOV); POST2(E_LEA);
+
+	case E_XOR:
+	{
+		expr_t* a = e->v.bin.a; postproc_aux1(a);
+		expr_t* b = e->v.bin.b; postproc_aux1(b);
+		if (a->type == E_OPERAND && b->type == E_OPERAND && cmp_op(&a->v.op, &b->v.op) == 0)
+		{
+//			e_del(a); // TODO
+//			e_del(b); // TODO
+			e->type = E_OPERAND;
+			e->v.op.t = IM;
+			e->v.op.v.im = 0;
+			e->v.op.symbol = NULL;
+		}
+	}
+
+	default:
+		break;
+	}
+}
+static void postproc_aux2(expr_t* e)
+{
+	if (e == NULL || e->visited)
+		return;
+	e->visited = true;
+
+	postproc_aux1(e);
+
+	postproc_aux2(e->next);
+	postproc_aux2(e->branch);
+}
+void postproc(expr_t* e)
+{
+	reset_visited(e);
+	postproc_aux2(e);
+}

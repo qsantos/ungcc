@@ -140,3 +140,14 @@ void reset_visited(expr_t* e)
 	reset_visited(e->next);
 	reset_visited(e->branch);
 }
+
+int cmp_op(operand_t* a, operand_t* b)
+{
+	if (a->t != b->t) return 1;
+
+	if (a->t == REG)  return a->v.reg  == b->v.reg  ? 0 : 1;
+	if (a->t == IM)   return a->v.im   == b->v.im   ? 0 : 1;
+	if (a->t == ADDR) return memcmp(&a->v.addr, &b->v.addr, sizeof(addr_t));
+
+	return 1;
+}

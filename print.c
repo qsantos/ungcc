@@ -123,7 +123,6 @@ size_t print_expr(char* str, size_t size, expr_t* e)
 		return ret;
 	}
 
-	// TODO should be a switch
 	switch (e->type)
 	{
 	// zeroary
@@ -140,8 +139,7 @@ size_t print_expr(char* str, size_t size, expr_t* e)
 	PRINT_EXPR1(E_JB,   "jb");   PRINT_EXPR1(E_JBE, "jbe");
 	PRINT_EXPR1(E_JL,   "jl");   PRINT_EXPR1(E_JLE, "jle");
 	PRINT_EXPR1(E_JG,   "jg");   PRINT_EXPR1(E_JGE, "jge");
-	PRINT_EXPR1(E_NOT,  "!");
-	PRINT_EXPR1(E_NEG,  "~");
+	PRINT_EXPR1(E_NOT,  "!");    PRINT_EXPR1(E_NEG, "~");
 
 	case E_CALL:
 		PRTCHK(print_expr, e->v.bin.a);

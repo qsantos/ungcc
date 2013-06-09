@@ -133,5 +133,6 @@ expr_t* e_mov (expr_t* a, expr_t* b);
 expr_t* e_lea (expr_t* a, expr_t* b);
 
 void reset_visited(expr_t* e);
+int  cmp_op       (operand_t* a, operand_t* b);
 
 #endif
