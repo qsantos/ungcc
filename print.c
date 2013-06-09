@@ -116,9 +116,6 @@ size_t print_expr(char* str, size_t size, expr_t* e)
 	size_t ret = 0;
 	*str = 0;
 
-	if (e->label)
-		PRTCHK(snprintf, "<%s>:\n", e->label)
-
 	if (e->type == E_OPERAND)
 	{
 		PRTCHK(print_op, &e->v.op, 32);
@@ -127,14 +124,17 @@ size_t print_expr(char* str, size_t size, expr_t* e)
 
 	switch (e->type)
 	{
+	case E_NOP:
+	case E_JMP:
+		// ignore
+		break;
+
 	// zeroary
-	PRINT_EXPR0(E_NOP, "nop");
 	PRINT_EXPR0(E_RET, "ret");
 	PRINT_EXPR0(E_HLT, "hlt");
 
 	// unary
 	PRINT_EXPR1(E_PUSH, "push"); PRINT_EXPR1(E_POP, "pop");
-	PRINT_EXPR1(E_JMP,  "jmp");
 	PRINT_EXPR1(E_JE,   "je");   PRINT_EXPR1(E_JNE, "jne");
 	PRINT_EXPR1(E_JS,   "js");   PRINT_EXPR1(E_JNS, "jns");
 	PRINT_EXPR1(E_JA,   "ja");   PRINT_EXPR1(E_JAE, "jae");
@@ -174,8 +174,16 @@ size_t print_expr(char* str, size_t size, expr_t* e)
 size_t print_stat(char* str, size_t size, expr_t* e)
 {
 	size_t ret = 0;
-	PRTCHK(print_expr, e);
-	PRTCHK(snprintf, ";\n");
+
+	if (e->label)
+		PRTCHK(snprintf, "<%s>:\n", e->label)
+
+	if (e->type != E_NOP && e->type != E_JMP)
+	{
+		PRTCHK(print_expr, e);
+		PRTCHK(snprintf, "\n");
+	}
+
 	return ret;
 }
 
