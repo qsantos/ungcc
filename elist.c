@@ -63,7 +63,17 @@ char* read_register(reg_t* dst, size_t* sz, char* str)
 	// register code
 	if (dst)
 	{
-		if      (str[0] == 'i' && str[1] == 'z') *dst = R_IZ;
+		if (str[0] == 's' && str[1] == 't') // FPU register
+		{
+			if (str[2] == '(')
+			{
+				*dst = R_ST0 + (str[3] - '0');
+				return str+5;
+			}
+			else
+				*dst = R_ST0;
+		}
+		else if (str[0] == 'i' && str[1] == 'z') *dst = R_IZ;
 		else if (str[1] == 'x') *dst = R_AX + (str[0] - 'a');  // ax, bx, cx, dx
 		else if (str[1] == 'l') *dst = R_AL + (str[0] - 'a');  // al, bl, cl, dl
 		else if (str[1] == 'h') *dst = R_AH + (str[0] - 'a');  // ah, bh, ch, dh

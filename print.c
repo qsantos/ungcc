@@ -30,6 +30,7 @@ size_t print_reg(char* str, size_t size, reg_t reg, size_t s)
 	else if (reg == R_BP) PRTCHK(snprintf, "bp")
 	else if (reg == R_SI) PRTCHK(snprintf, "si")
 	else if (reg == R_DI) PRTCHK(snprintf, "di")
+	else if (R_ST0 <= reg && reg <= R_ST1) PRTCHK(snprintf, "st(%zu)", reg - R_ST0)
 	else                  PRTCHK(snprintf, "?")
 
 	return ret;

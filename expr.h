@@ -13,6 +13,10 @@ typedef enum
 	R_AH, R_BH, R_CH, R_DH, // high parts
 	R_SP, R_BP,             // segment and base pointers
 	R_SI, R_DI,             // segment and data indexes
+
+	// FPU registers
+	R_ST0, R_ST1, R_ST2, R_ST3,
+	R_ST4, R_ST5, R_ST6, R_ST7,
 } reg_t;
 typedef ssize_t im_t;  // immediate value
 typedef struct         // value at address
