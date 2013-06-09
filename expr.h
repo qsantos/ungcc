@@ -3,11 +3,22 @@
 
 #include <sys/types.h>
 #include <stdbool.h>
-
+      
+/*
+typedef enum
+{
+	R_IZ,                   // null pseudo-register
+	R_AX, R_BX, R_CX, R_DX, // usual registers (or low parts)
+	R_AL = R_AX,
+	R_AH, R_BH, R_CH, R_DH, // high parts
+	R_SP, R_BP,             // segment and base pointers
+	R_SI, R_DI,             // segment and base indexes,
+} reg_t;
+*/
 // operand
-typedef unsigned char reg_t; // value in register
-typedef ssize_t       im_t;  // immediate value
-typedef struct               // value at address
+typedef size_t  reg_t; // register
+typedef ssize_t im_t;  // immediate value
+typedef struct         // value at address
 {
 	reg_t  base;  // base register
 	reg_t  idx;   // index register
@@ -38,7 +49,7 @@ typedef enum
 	E_OPERAND,
 
 	// zeroary
-	E_NOP,  E_RET, E_LEAVE, E_HLT,
+	E_NOP,  E_RET, E_HLT,
 
 	// unary
 	E_PUSH, E_POP,                       // statments
@@ -91,7 +102,6 @@ expr_t* e_op_addr(reg_t base, reg_t idx, im_t scale, im_t disp);
 // zeroary
 expr_t* e_nop  ();
 expr_t* e_ret  ();
-expr_t* e_leave();
 expr_t* e_hlt  ();
 
 // unary

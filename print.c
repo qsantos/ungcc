@@ -123,7 +123,6 @@ size_t print_expr(char* str, size_t size, expr_t* e)
 	// zeroary
 	PRINT_EXPR0(E_NOP,   "nop");
 	PRINT_EXPR0(E_RET,   "ret");
-	PRINT_EXPR0(E_LEAVE, "leave");
 	PRINT_EXPR0(E_HLT,   "hlt");
 
 	// unary

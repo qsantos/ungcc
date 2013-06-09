@@ -153,14 +153,19 @@ char* read_operand(expr_t** dst, size_t* sz, char* str)
 	return str+1; // ')'
 }
 
-#define ZER(N,T) if(strcmp(opcode,N)==0||strcmp(opcode,N"l")==0||strcmp(opcode,N"b")==0){e=T();   return e;}
-#define UNI(N,T) if(strcmp(opcode,N)==0||strcmp(opcode,N"l")==0||strcmp(opcode,N"b")==0){e=T(a);  return e;}
-#define BIN(N,T) if(strcmp(opcode,N)==0||strcmp(opcode,N"l")==0||strcmp(opcode,N"b")==0){e=T(b,a);return e;}
+#define ZER(N,T) if(strcmp(opcode,N)==0||strcmp(opcode,N"l")==0||strcmp(opcode,N"b")==0)\
+	{elist_push(dst,of,T());   return;}
+#define UNI(N,T) if(strcmp(opcode,N)==0||strcmp(opcode,N"l")==0||strcmp(opcode,N"b")==0)\
+	{elist_push(dst,of,T(a));  return;}
+#define BIN(N,T) if(strcmp(opcode,N)==0||strcmp(opcode,N"l")==0||strcmp(opcode,N"b")==0)\
+	{elist_push(dst,of,T(a,b));return;}
 
-#define UNI_F(N,T) if(strcmp(opcode,N)==0||strcmp(opcode,N"l")==0||strcmp(opcode,N"b")==0){e=e_mov(a,T(a));   return e;}
-#define BIN_F(N,T) if(strcmp(opcode,N)==0||strcmp(opcode,N"l")==0||strcmp(opcode,N"b")==0){e=e_mov(b,T(b,a)); return e;}
+#define UNI_F(N,T) if(strcmp(opcode,N)==0||strcmp(opcode,N"l")==0||strcmp(opcode,N"b")==0)\
+	{elist_push(dst,of,e_mov(a,T(a)));   return;}
+#define BIN_F(N,T) if(strcmp(opcode,N)==0||strcmp(opcode,N"l")==0||strcmp(opcode,N"b")==0)\
+	{elist_push(dst,of,e_mov(b,T(b,a))); return;}
 
-expr_t* read_instr(char* str)
+void read_instr(elist_t* dst, size_t of, char* str)
 {
 	const char* opcode = str;
 	while (*str && *str != ' ') str++; // skip the opcode
@@ -171,15 +176,18 @@ expr_t* read_instr(char* str)
 	}
 	if (*str == 0) str = NULL; // no parameters
 
-	expr_t* e = NULL;
-
 	// zeroary
-	ZER("nop"  , e_nop  )
-	ZER("ret"  , e_ret  )
-	ZER("leave", e_leave)
-	ZER("hlt"  , e_hlt  )
+	ZER("nop", e_nop)
+	ZER("ret", e_ret)
+	ZER("hlt", e_hlt)
 
-	if (!str) return NULL;
+	if (strcmp(opcode, "leave") == 0)
+	{
+		elist_push(dst, of, e_mov(e_op_reg(10), e_op_reg(9)));
+		elist_push(dst, of, e_push(e_op_reg(10)));
+	}
+
+	if (!str) return;
 	expr_t* a = NULL;
 	str = read_operand(&a, NULL, str)+1;
 
@@ -197,7 +205,7 @@ expr_t* read_instr(char* str)
 	// unary affectation
 	UNI_F("not" , e_not ) UNI("neg", e_neg)
 
-	if (!str) return NULL;
+	if (!str) return;
 	expr_t* b = NULL;
 	read_operand(&b, 0, str);
 
@@ -211,8 +219,6 @@ expr_t* read_instr(char* str)
 	BIN_F("sar" , e_sar ) BIN_F("sal", e_sal) BIN_F("shr", e_shr) BIN_F("shl", e_shl)
 
 	fprintf(stderr, "Unknown instruction '%s'\n", opcode);
-
-	return e;
 }
 
 void read_file(elist_t* dst, FILE* f)
@@ -254,13 +260,11 @@ void read_file(elist_t* dst, FILE* f)
 		part = strtok(NULL, "\t"); // assembly code
 		if (!part) continue;
 
-		expr_t* e = read_instr(part);
-		if (e)
-		{
-			e->label = label;
-			label = NULL;
-			elist_push(dst, offset, e);
-		}
+		read_instr(dst, offset, part);
+/* TODO
+		e->label = label;
+		label = NULL;
+*/
 	}
 
 	free(line);
@@ -291,7 +295,7 @@ size_t functions(elist_t* dst, elist_t* l, size_t entryPoint)
 	{
 		expr_t* e = l->e[i].e;
 
-		if (e->type != E_JMP && e->type != E_RET && e->type != E_LEAVE && e->type != E_HLT && i+1 < l->n)
+		if (e->type != E_JMP && e->type != E_RET && e->type != E_HLT && i+1 < l->n)
 			e->next = l->e[i+1].e;
 
 		// branch/function detection

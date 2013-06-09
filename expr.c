@@ -23,7 +23,6 @@ void e_del(expr_t* e)
 	// zeroary
 	case E_NOP:
 	case E_RET:
-	case E_LEAVE:
 	case E_HLT:
 		break;
 
@@ -96,7 +95,6 @@ expr_t* e_op_addr(reg_t base, reg_t idx, im_t scale, im_t disp)
 }
 E_ZER(nop  , E_NOP  )
 E_ZER(ret  , E_RET  )
-E_ZER(leave, E_LEAVE)
 E_ZER(hlt  , E_HLT  )
 
 // unary

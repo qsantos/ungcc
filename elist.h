@@ -25,7 +25,7 @@ eopair_t* elist_at  (elist_t* l, size_t o);
 
 char*   read_register(reg_t*   dst, size_t* sz, char* str);
 char*   read_operand (expr_t** dst, size_t* sz, char* str);
-expr_t* read_instr   (                          char* str);
+void    read_instr   (elist_t* dst, size_t  of, char* str);
 void    read_file    (elist_t* dst,             FILE* f);
 
 // returns the index of main() in dst
