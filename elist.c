@@ -226,7 +226,16 @@ void read_instr(elist_t* dst, size_t of, char* str)
 	read_operand(&b, 0, str);
 
 	// binary
-	BIN("test", e_test) BIN("cmp", e_cmp)
+	if (strcmp(opcode, "test") == 0)
+	{
+		elist_push(dst, of, e_mov(e_op_reg(R_FL), e_and(b, a)));
+		return;
+	}
+	if (strcmp(opcode, "cmp") == 0 || strcmp(opcode, "cmpl") == 0 || strcmp(opcode, "cmpb") == 0)
+	{
+		elist_push(dst, of, e_mov(e_op_reg(R_FL), e_sub(b, a)));
+		return;
+	}
 	BIN("xchg", e_xchg) BIN("mov", e_mov) BIN("lea", e_lea)
 
 	// binary affectation
@@ -424,7 +433,6 @@ static void postproc_aux1(expr_t* e)
 	POST2(E_ADD);  POST2(E_SUB); POST2(E_SBB); POST2(E_MUL); POST2(E_DIV);
 	POST2(E_AND);  POST2(E_OR);
 	POST2(E_SAR);  POST2(E_SAL); POST2(E_SHR); POST2(E_SHL);
-	POST2(E_TEST); POST2(E_CMP);
 	POST2(E_XCHG); POST2(E_MOV); POST2(E_LEA);
 
 	case E_XOR:

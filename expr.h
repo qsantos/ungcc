@@ -14,6 +14,8 @@ typedef enum
 	R_SP, R_BP,             // segment and base pointers
 	R_SI, R_DI,             // segment and data indexes
 
+	R_FL, // flags
+
 	// FPU registers
 	R_ST0, R_ST1, R_ST2, R_ST3,
 	R_ST4, R_ST5, R_ST6, R_ST7,
@@ -61,7 +63,6 @@ typedef enum
 	E_NOT,  E_NEG,                       // expressions
 
 	// binary
-	E_TEST, E_CMP,                      // comparison statments
 	E_ADD,  E_SUB, E_SBB, E_MUL, E_DIV, // mathematic operators
 	E_AND,  E_OR,  E_XOR,               // logic operators
 	E_SAR,  E_SAL, E_SHR, E_SHL,        // shifting operators
@@ -118,8 +119,6 @@ expr_t* e_jg  (expr_t* a); expr_t* e_jge(expr_t* a);
 expr_t* e_not (expr_t* a); expr_t* e_neg(expr_t* b);
 
 // binary
-expr_t* e_test(expr_t* a, expr_t* b);
-expr_t* e_cmp (expr_t* a, expr_t* b);
 expr_t* e_add (expr_t* a, expr_t* b);
 expr_t* e_sub (expr_t* a, expr_t* b);
 expr_t* e_sbb (expr_t* a, expr_t* b);

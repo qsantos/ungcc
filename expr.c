@@ -41,7 +41,6 @@ void e_del(expr_t* e)
 		break;
 
 	// binary
-	case E_TEST: case E_CMP:
 	case E_ADD:  case E_SUB: case E_SBB: case E_MUL: case E_DIV:
 	case E_AND:  case E_OR:  case E_XOR:
 	case E_SAR:  case E_SAL: case E_SHR: case E_SHL:
@@ -125,7 +124,6 @@ E_UNI(not , E_NOT ) E_UNI(neg, E_NEG)
 	ret->v.bin.b = b; \
 	return ret; \
 }
-E_BIN(test, E_TEST) E_BIN(cmp, E_CMP)
 E_BIN(add , E_ADD ) E_BIN(sub, E_SUB) E_BIN(sbb, E_SBB) E_BIN(mul, E_MUL) E_BIN(div, E_DIV)
 E_BIN(and , E_AND ) E_BIN(or , E_OR ) E_BIN(xor, E_XOR)
 E_BIN(sar , E_SAR ) E_BIN(sal, E_SAL) E_BIN(shr, E_SHR) E_BIN(shl, E_SHL)

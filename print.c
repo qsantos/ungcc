@@ -30,6 +30,7 @@ size_t print_reg(char* str, size_t size, reg_t reg, size_t s)
 	else if (reg == R_BP) PRTCHK(snprintf, "bp")
 	else if (reg == R_SI) PRTCHK(snprintf, "si")
 	else if (reg == R_DI) PRTCHK(snprintf, "di")
+	else if (reg == R_FL) PRTCHK(snprintf, "fl")
 	else if (R_ST0 <= reg && reg <= R_ST1) PRTCHK(snprintf, "st(%zu)", reg - R_ST0)
 	else                  PRTCHK(snprintf, "?")
 
@@ -160,8 +161,6 @@ size_t print_expr(char* str, size_t size, expr_t* e)
 	PRINT_EXPR2(E_SAL,  "<<");
 	PRINT_EXPR2(E_SHR,  ">>'"); // TODO
 	PRINT_EXPR2(E_SHL,  "<<'"); // TODO
-	PRINT_EXPR2(E_TEST, "==");
-	PRINT_EXPR2(E_CMP,  "=='"); // TODO
 	PRINT_EXPR2(E_XCHG, "↔");
 	PRINT_EXPR2(E_MOV,  "=");
 	PRINT_EXPR2(E_LEA,  "=&");
