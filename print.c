@@ -59,6 +59,12 @@ size_t print_op(char* str, size_t size, operand_t* op, size_t s)
 		return ret;
 	}
 
+	if (op->last && op->last->used == 1)
+	{
+		PRTCHK(print_expr, op->last->v.bin.b);
+		return ret;
+	}
+
 	if (op->t == REG)
 		PRTCHK(print_reg, op->v.reg, s)
 	else if (op->t == IM)
@@ -115,6 +121,9 @@ size_t print_expr(char* str, size_t size, expr_t* e)
 {
 	size_t ret = 0;
 	*str = 0;
+
+	if (e->used == 1)
+		return ret;
 
 	if (e->type == E_OPERAND)
 	{
@@ -178,11 +187,9 @@ size_t print_stat(char* str, size_t size, expr_t* e)
 	if (e->label)
 		PRTCHK(snprintf, "<%s>:\n", e->label)
 
-	if (e->type != E_NOP && e->type != E_JMP)
-	{
-		PRTCHK(print_expr, e);
+	PRTCHK(print_expr, e);
+	if (ret != 0)
 		PRTCHK(snprintf, "\n");
-	}
 
 	return ret;
 }

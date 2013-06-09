@@ -31,5 +31,6 @@ void    read_file    (elist_t* dst,             FILE* f);
 
 size_t  functions(elist_t* dst, elist_t* l, size_t entryPoint); // returns the index of main() in dst
 void    postproc (expr_t* e);
+void    reduc    (expr_t* e);
 
 #endif

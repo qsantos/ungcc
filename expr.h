@@ -4,6 +4,9 @@
 #include <sys/types.h>
 #include <stdbool.h>
       
+// recursive structure
+typedef struct expr expr_t;
+
 // operand
 typedef enum
 {
@@ -19,6 +22,8 @@ typedef enum
 	// FPU registers
 	R_ST0, R_ST1, R_ST2, R_ST3,
 	R_ST4, R_ST5, R_ST6, R_ST7,
+
+	N_REG,
 } reg_t;
 typedef ssize_t im_t;  // immediate value
 typedef struct         // value at address
@@ -30,7 +35,7 @@ typedef struct         // value at address
 } addr_t;
 typedef struct
 {
-	enum
+	enum op_type
 	{
 		REG,  // register
 		IM,   // immediate
@@ -43,7 +48,8 @@ typedef struct
 		addr_t addr;
 	} v;
 
-	char* symbol;
+	char*   symbol; // associated to im value
+	expr_t* last;   // address of last reg affectation
 } operand_t;
 
 typedef enum
@@ -69,9 +75,6 @@ typedef enum
 	E_XCHG, E_MOV, E_LEA,               // affectation
 } etype_t;
 
-// recursive structure
-typedef struct expr expr_t;
-
 struct expr
 {
 	etype_t type;
@@ -90,13 +93,18 @@ struct expr
 	expr_t* next;
 	expr_t* branch;
 
+	// for MOV: number of uses of this reg affectation
+	size_t used;
+
 	bool visited;
 };
 
 expr_t* e_new();
 void    e_del(expr_t* e);
+expr_t* e_cpy(expr_t* e);
 
 // operand
+expr_t* e_op     (enum op_type t);
 expr_t* e_op_reg (reg_t reg);
 expr_t* e_op_im  (im_t im);
 expr_t* e_op_addr(reg_t base, reg_t idx, im_t scale, im_t disp);

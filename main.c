@@ -46,6 +46,7 @@ int main(int argc, char** argv)
 	size_t main_idx = functions(&fl, &el, entryPoint);
 	expr_t* e = fl.e[main_idx].e;
 	postproc(e);
+	reduc(e);
 	zui(argc, argv, e);
 
 	elist_del(&fl);

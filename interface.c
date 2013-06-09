@@ -54,9 +54,7 @@ static inline void blist_setdim(blist_t* l)
 		for (expr_t* e = b->e; e; e = e->next)
 		{
 			char glText[BUFSIZE];
-			size_t ret = print_stat(glText, BUFSIZE, e);
-			if (ret == 0)
-				break;
+			print_stat(glText, BUFSIZE, e);
 
 			double curWidth = glutStrokeLength(FONT, (unsigned char*) glText);
 			if (curWidth > maxWidth)
@@ -93,9 +91,7 @@ static void blist_display(blist_t* l)
 		for (expr_t* e = b->e; e; e = e->next)
 		{
 			char glText[BUFSIZE];
-			size_t ret = print_stat(glText, BUFSIZE, e);
-			if (ret == 0)
-				break;
+			print_stat(glText, BUFSIZE, e);
 
 			glutStrokeString(FONT, (unsigned char*) glText);
 

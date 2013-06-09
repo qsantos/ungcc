@@ -171,9 +171,9 @@ char* read_operand(expr_t** dst, size_t* sz, char* str)
 	{elist_push(dst,of,T(b,a));return;}
 
 #define UNI_F(N,T) if(strcmp(opcode,N)==0||strcmp(opcode,N"l")==0||strcmp(opcode,N"b")==0)\
-	{elist_push(dst,of,e_mov(a,T(a)));   return;}
+	{elist_push(dst,of,e_mov(e_cpy(a),T(a)));   return;}
 #define BIN_F(N,T) if(strcmp(opcode,N)==0||strcmp(opcode,N"l")==0||strcmp(opcode,N"b")==0)\
-	{elist_push(dst,of,e_mov(b,T(b,a))); return;}
+	{elist_push(dst,of,e_mov(e_cpy(b),T(b,a))); return;}
 
 void read_instr(elist_t* dst, size_t of, char* str)
 {
@@ -483,4 +483,78 @@ void postproc(expr_t* e)
 {
 	reset_visited(e);
 	postproc_aux2(e);
+}
+
+#define REDUC1(T) case T: reduc_aux1(e->v.uni.a, last); break;
+#define REDUC2(T) case T: reduc_aux1(e->v.bin.a, last); reduc_aux1(e->v.bin.b, last); break;
+
+static void reduc_aux1(expr_t* e, expr_t** last)
+{
+	switch (e->type)
+	{
+	case E_OPERAND:
+		if (e->v.op.t == REG)
+		{
+			expr_t* l = last[e->v.op.v.reg];
+			e->v.op.last = l;
+			if (l) l->used++;
+		}
+		break;
+
+	// unary
+	REDUC1(E_PUSH); REDUC1(E_POP);
+	REDUC1(E_JMP);
+	REDUC1(E_JE);   REDUC1(E_JNE);
+	REDUC1(E_JS);   REDUC1(E_JNS);
+	REDUC1(E_JA);   REDUC1(E_JAE);
+	REDUC1(E_JB);   REDUC1(E_JBE);
+	REDUC1(E_JL);   REDUC1(E_JLE);
+	REDUC1(E_JG);   REDUC1(E_JGE);
+	REDUC1(E_CALL);
+	REDUC1(E_NOT);  REDUC1(E_NEG);
+
+	// binary
+	REDUC2(E_ADD);  REDUC2(E_SUB); REDUC2(E_SBB); REDUC2(E_MUL); REDUC2(E_DIV);
+	REDUC2(E_AND);  REDUC2(E_OR);  REDUC2(E_XOR);
+	REDUC2(E_SAR);  REDUC2(E_SAL); REDUC2(E_SHR); REDUC2(E_SHL);
+
+	case E_MOV:
+	case E_LEA:
+		reduc_aux1(e->v.bin.b, last);
+		break;
+
+	default:
+		break;
+	}
+}
+static void reduc_aux2(expr_t* e, expr_t** last)
+{
+	if (e == NULL || e->visited)
+		return;
+	e->visited = true;
+
+	reduc_aux1(e, last);
+
+	expr_t* a = e->v.bin.a;
+	if (e->type == E_MOV && a->type == E_OPERAND && a->v.op.t == REG)
+	{
+		reg_t reg = a->v.op.v.reg;
+		expr_t* prev = last[reg];
+		last[reg] = e;
+		reduc_aux2(e->next, last);
+		reduc_aux2(e->branch, last);
+		last[reg] = prev;
+	}
+	else
+	{
+		reduc_aux2(e->next, last);
+		reduc_aux2(e->branch, last);
+	}
+}
+void reduc(expr_t* e)
+{
+	expr_t* last[N_REG];
+	memset(last, 0, N_REG * sizeof(expr_t*));
+	reset_visited(e);
+	reduc_aux2(e, last);
 }
