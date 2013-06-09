@@ -431,22 +431,35 @@ static void postproc_aux1(expr_t* e)
 
 	// binary
 	POST2(E_ADD);  POST2(E_SUB); POST2(E_SBB); POST2(E_MUL); POST2(E_DIV);
-	POST2(E_AND);  POST2(E_OR);
+	POST2(E_OR);
 	POST2(E_SAR);  POST2(E_SAL); POST2(E_SHR); POST2(E_SHL);
 	POST2(E_XCHG); POST2(E_MOV); POST2(E_LEA);
 
+	case E_AND:
+	{
+		expr_t* a = e->v.bin.a; postproc_aux1(a);
+		expr_t* b = e->v.bin.b; postproc_aux1(b);
+		if (a->type == E_OPERAND && b->type == E_OPERAND && cmp_op(&a->v.op, &b->v.op) == 0)
+		{
+			e->type = E_OPERAND;
+			memcpy(&e->v.op, &a->v.op, sizeof(operand_t));
+//			e_del(a); // TODO
+//			e_del(b); // TODO
+		}
+		break;
+	}
 	case E_XOR:
 	{
 		expr_t* a = e->v.bin.a; postproc_aux1(a);
 		expr_t* b = e->v.bin.b; postproc_aux1(b);
 		if (a->type == E_OPERAND && b->type == E_OPERAND && cmp_op(&a->v.op, &b->v.op) == 0)
 		{
-//			e_del(a); // TODO
-//			e_del(b); // TODO
 			e->type = E_OPERAND;
 			e->v.op.t = IM;
 			e->v.op.v.im = 0;
 			e->v.op.symbol = NULL;
+//			e_del(a); // TODO
+//			e_del(b); // TODO
 		}
 	}
 
