@@ -295,7 +295,9 @@ size_t functions(elist_t* dst, elist_t* l, size_t entryPoint)
 	{
 		expr_t* e = l->e[i].e;
 
-		if (e->type != E_JMP && e->type != E_RET && e->type != E_HLT && i+1 < l->n)
+		if (e->type == E_JMP || e->type == E_RET || e->type == E_HLT)
+			e->endBlck = true;
+		else if (i+1 < l->n)
 			e->next = l->e[i+1].e;
 
 		// branch/function detection
