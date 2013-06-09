@@ -184,7 +184,8 @@ void read_instr(elist_t* dst, size_t of, char* str)
 	if (strcmp(opcode, "leave") == 0)
 	{
 		elist_push(dst, of, e_mov (e_op_reg(R_BP), e_op_reg(R_SP)));
-		elist_push(dst, of, e_push(e_op_reg(R_BP)));
+		elist_push(dst, of, e_push(e_op_reg(R_BP))); // TODO: two instructions with same offset
+		return;
 	}
 
 	if (!str) return;
@@ -200,7 +201,12 @@ void read_instr(elist_t* dst, size_t of, char* str)
 	UNI("jb"  , e_jb  ) UNI("jbe", e_jbe)
 	UNI("jl"  , e_jl  ) UNI("jle", e_jle)
 	UNI("jg"  , e_jg  ) UNI("jge", e_jge)
-	UNI("call", e_call)
+
+	if (strcmp(opcode, "call") == 0)
+	{
+		elist_push(dst, of, e_mov(e_op_reg(R_AX), e_call(a)));
+		return;
+	}
 
 	// unary affectation
 	UNI_F("not" , e_not ) UNI("neg", e_neg)
@@ -275,24 +281,6 @@ void read_file(elist_t* dst, FILE* f)
 
 size_t functions(elist_t* dst, elist_t* l, size_t entryPoint)
 {
-	// finds _start()
-	eopair_t* p = elist_at(l, entryPoint);
-	if (!p)
-		fprintf(stderr, "No such instruction: %#x\n\n", entryPoint);
-	p->e->isFun = true;
-
-	// finds main() address, right before the call to __libc_start_main@plt
-	for (; p->e->type != E_CALL; p++);
-	p--;
-	expr_t* op = p->e->v.uni.a;
-	if (p->e->type != E_PUSH || !op || op->type != E_OPERAND || op->v.op.t != IM)
-	{
-		fprintf(stderr, "Unexpected instruction:\n");
-		fprint_stat(stderr, p->e);
-		exit(1);
-	}
-	size_t mainAddr = p->e->v.uni.a->v.op.v.im;
-
 	// builds hierarchy
 	for (size_t i = 0; i < l->n; i++)
 	{
@@ -303,34 +291,73 @@ size_t functions(elist_t* dst, elist_t* l, size_t entryPoint)
 		else if (i+1 < l->n)
 			e->next = l->e[i+1].e;
 
-		// branch/function detection
-
-		if (!(E_JMP <= e->type && e->type <= E_CALL)) // jump or call
+		if (!(E_JMP <= e->type && e->type <= E_JGE)) // any jump
 			continue;
 
-		expr_t* op = e->v.uni.a;
-		if (op->type != E_OPERAND || op->v.op.t != IM)
+		expr_t* a = e->v.uni.a;
+		if (a->type != E_OPERAND || a->v.op.t != IM)
 		{
 			fprintf(stderr, "Unsupported instruction at %#x: ", l->e[i].o);
 			fprint_stat(stderr, e);
 			continue;
 		}
 
-		eopair_t* p = elist_at(l, op->v.op.v.im);
+		eopair_t* p = elist_at(l, a->v.op.v.im);
 		if (!p)
 		{
-			fprintf(stderr, "Unknown offset %#x\n", op->v.op.v.im);
+			fprintf(stderr, "Unknown offset %#x\n", a->v.op.v.im);
 			continue;
 		}
-		if (e->type == E_CALL)
-			p->e->isFun = true;
-		else
-		{
-			e->endBlck = true;
-			e->branch = p->e;
-			(p-1)->e->endBlck = true;
-		}
+
+		e->endBlck = true;
+		e->branch = p->e;
+		(p-1)->e->endBlck = true;
 	}
+
+	// find functions
+	for (size_t i = 0; i < l->n; i++)
+	{
+		expr_t* e = l->e[i].e;
+
+		// ax = fct()
+		if (e->type != E_MOV)
+			continue;
+
+		expr_t* a = e->v.bin.b;
+		if (a->type != E_CALL)
+			continue;
+
+		expr_t* b = a->v.uni.a;
+		if (b->type != E_OPERAND || b->v.op.t != IM)
+		{
+			fprintf(stderr, "Unsupported instruction at %#x: ", l->e[i].o);
+			fprint_stat(stderr, a);
+			continue;
+		}
+
+		eopair_t* p = elist_at(l, b->v.op.v.im);
+		if (!p)
+			continue;
+		p->e->isFun = true;
+	}
+
+	// finds _start()
+	eopair_t* p = elist_at(l, entryPoint);
+	if (!p)
+		fprintf(stderr, "No such instruction: %#x\n\n", entryPoint);
+	p->e->isFun = true;
+
+	// finds main() address, right before the call to __libc_start_main@plt
+	for (; !(p->e->type == E_MOV && p->e->v.bin.b->type == E_CALL); p++);
+	p--;
+	expr_t* op = p->e->v.uni.a;
+	if (p->e->type != E_PUSH || !op || op->type != E_OPERAND || op->v.op.t != IM)
+	{
+		fprintf(stderr, "Unexpected instruction:\n");
+		fprint_stat(stderr, p->e);
+		exit(1);
+	}
+	size_t mainAddr = p->e->v.uni.a->v.op.v.im;
 
 	// marks main() as a function
 	p = elist_at(l, mainAddr);
