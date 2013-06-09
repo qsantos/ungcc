@@ -158,7 +158,7 @@ char* read_operand(expr_t** dst, size_t* sz, char* str)
 #define UNI(N,T) if(strcmp(opcode,N)==0||strcmp(opcode,N"l")==0||strcmp(opcode,N"b")==0)\
 	{elist_push(dst,of,T(a));  return;}
 #define BIN(N,T) if(strcmp(opcode,N)==0||strcmp(opcode,N"l")==0||strcmp(opcode,N"b")==0)\
-	{elist_push(dst,of,T(a,b));return;}
+	{elist_push(dst,of,T(b,a));return;}
 
 #define UNI_F(N,T) if(strcmp(opcode,N)==0||strcmp(opcode,N"l")==0||strcmp(opcode,N"b")==0)\
 	{elist_push(dst,of,e_mov(a,T(a)));   return;}
