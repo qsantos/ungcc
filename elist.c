@@ -485,10 +485,10 @@ void postproc(expr_t* e)
 	postproc_aux2(e);
 }
 
-#define REDUC1(T) case T: reduc_aux1(e->v.uni.a, last); break;
-#define REDUC2(T) case T: reduc_aux1(e->v.bin.a, last); reduc_aux1(e->v.bin.b, last); break;
+#define REDUC1(T) case T: reduc_aux1(r, e->v.uni.a, last); break;
+#define REDUC2(T) case T: reduc_aux1(r, e->v.bin.a, last); reduc_aux1(r, e->v.bin.b, last); break;
 
-static void reduc_aux1(expr_t* e, expr_t** last)
+static void reduc_aux1(expr_t* r, expr_t* e, expr_t** last)
 {
 	switch (e->type)
 	{
@@ -496,8 +496,11 @@ static void reduc_aux1(expr_t* e, expr_t** last)
 		if (e->v.op.t == REG)
 		{
 			expr_t* l = last[e->v.op.v.reg];
-			e->v.op.last = l;
-			if (l) l->used++;
+			if (l && l->next == r)
+			{
+				e->v.op.last = l;
+				l->used++;
+			}
 		}
 		break;
 
@@ -520,7 +523,7 @@ static void reduc_aux1(expr_t* e, expr_t** last)
 
 	case E_MOV:
 	case E_LEA:
-		reduc_aux1(e->v.bin.b, last);
+		reduc_aux1(r, e->v.bin.b, last);
 		break;
 
 	default:
@@ -533,7 +536,7 @@ static void reduc_aux2(expr_t* e, expr_t** last)
 		return;
 	e->visited = true;
 
-	reduc_aux1(e, last);
+	reduc_aux1(e, e, last);
 
 	expr_t* a = e->v.bin.a;
 	if (e->type == E_MOV && a->type == E_OPERAND && a->v.op.t == REG)
