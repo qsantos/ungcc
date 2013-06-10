@@ -61,7 +61,7 @@ static inline void blist_setdim(blist_t* l)
 				maxWidth = curWidth; 
 			lines += countChars(glText, '\n');
 
-			if (e->branch)
+			if (e->endBlck)
 				break;
 		}
 		b->w = blockScale * maxWidth;
@@ -95,7 +95,7 @@ static void blist_display(blist_t* l)
 
 			glutStrokeString(FONT, (unsigned char*) glText);
 
-			if (e->branch)
+			if (e->endBlck)
 				break;
 		}
 

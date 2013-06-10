@@ -241,8 +241,9 @@ size_t print_stat(char* str, size_t size, expr_t* e)
 	if (e->label)
 		PRTCHK(snprintf, "<%s>:\n", e->label)
 
+	size_t start = ret;
 	PRTCHK(print_expr, e);
-	if (ret != 0)
+	if (ret != start)
 		PRTCHK(snprintf, "\n");
 
 	return ret;
