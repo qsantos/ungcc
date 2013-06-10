@@ -83,19 +83,73 @@ size_t print_op(char* str, size_t size, operand_t* op, size_t s)
 	else if (op->t == ADDR)
 	{
 		addr_t* a = &op->v.addr;
-		if (a->disp)
-			PRTCHK(print_hex, a->disp);
-		if (a->base)
+/*
+For reminder, the context looks like:
+
++
+      .
+      .          parameters of the current functions
+      .
+    param0
+ -------------
+      RA
+ -------------
+   prev. BP
+ -----BP------
+    local0
+      .
+      .          local variables
+      .
+    localN
+      ?
+    paramM
+      .
+      .          paramters for the called function
+      .
+    param0
+ -----SP------
+-
+
+*/
+		if (a->base == R_BP)
 		{
-			PRTCHK(snprintf, "(");
-			PRTCHK(print_reg, a->base, 32);
+			if (a->disp >= 0) // parameters
+				PRTCHK(snprintf, "param%zu", a->disp - 8) // RA and previous BP pushed on stack
+			else // local variable
+				PRTCHK(snprintf, "local%zu", -a->disp)
 			if (a->scale)
 			{
-				PRTCHK(snprintf, ",");
+				PRTCHK(snprintf, "[");
 				PRTCHK(print_reg, a->idx, 32);
-				PRTCHK(snprintf, ", %u", a->scale);
+				PRTCHK(snprintf, "]_%zu", a->scale);
 			}
-			PRTCHK(snprintf, ")");
+		}
+		else if (a->base == R_SP) // parameters for called function
+		{
+			PRTCHK(snprintf, "nparam%zu", a->disp)
+			if (a->scale)
+			{
+				PRTCHK(snprintf, "[");
+				PRTCHK(print_reg, a->idx, 32);
+				PRTCHK(snprintf, "]_%zu", a->scale);
+			}
+		}
+		else
+		{
+			if (a->disp)
+				PRTCHK(print_hex, a->disp);
+			if (a->base)
+			{
+				PRTCHK(snprintf, "(");
+				PRTCHK(print_reg, a->base, 32);
+				if (a->scale)
+				{
+					PRTCHK(snprintf, ",");
+					PRTCHK(print_reg, a->idx, 32);
+					PRTCHK(snprintf, ", %u", a->scale);
+				}
+				PRTCHK(snprintf, ")");
+			}
 		}
 	}
 

@@ -28,10 +28,10 @@ typedef enum
 typedef ssize_t im_t;  // immediate value
 typedef struct         // value at address
 {
-	reg_t  base;  // base register
-	reg_t  idx;   // index register
-	size_t scale; // scale factor
-	size_t disp;  // displacement
+	reg_t   base;  // base register
+	reg_t   idx;   // index register
+	size_t  scale; // scale factor
+	ssize_t disp;  // displacement
 } addr_t;
 typedef struct
 {
