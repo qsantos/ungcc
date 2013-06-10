@@ -410,6 +410,45 @@ size_t functions(elist_t* dst, elist_t* l, size_t entryPoint)
 	return ret;
 }
 
+/*
+ 80490b6:       83 e4 f0                and    $0xfffffff0,%esp
+ 80490b9:       83 ec 40                sub    $0x40,%esp
+*/
+
+static bool isContextInit(expr_t* e)
+{
+	if (e->type == E_PUSH)
+	{
+		expr_t* a = e->v.uni.a;
+		if (a->type == E_OPERAND && a->v.op.t == REG)
+		{
+			reg_t reg = a->v.op.v.reg;
+			return reg == R_BP || reg == R_DI || reg == R_SI || reg == R_BX;
+		}
+	}
+	if (e->type == E_MOV)
+	{
+		expr_t* a = e->v.bin.a;
+		expr_t* b = e->v.bin.b;
+		if (a->type == E_OPERAND && a->v.op.t == REG &&
+		    b->type == E_OPERAND && b->v.op.t == REG)
+		{
+			reg_t reg_a = a->v.op.v.reg;
+			reg_t reg_b = b->v.op.v.reg;
+			return reg_a == R_BP && reg_b == R_SP;
+		}
+	}
+	return false;
+}
+void stripcontext(expr_t* e)
+{
+	for (; isContextInit(e); e = e->next)
+	{
+		e->type = E_NOP;
+		// TODO
+	}
+}
+
 #define POST1(T) case T: postproc_aux1(e->v.uni.a); break;
 #define POST2(T) case T: postproc_aux1(e->v.bin.a); postproc_aux1(e->v.bin.b); break;
 
