@@ -16,7 +16,7 @@ expr_t* e_new()
 	return ret;
 }
 
-void e_del(expr_t* e)
+void e_del(expr_t* e, bool keep)
 {
 	switch (e->type)
 	{
@@ -45,7 +45,7 @@ void e_del(expr_t* e)
 	case E_JG:   case E_JGE:
 	case E_CALL:
 	case E_NOT:  case E_NEG:
-		e_del(e->v.uni.a);
+		e_del(e->v.uni.a, false);
 		break;
 
 	// binary
@@ -53,11 +53,13 @@ void e_del(expr_t* e)
 	case E_AND:  case E_OR:  case E_XOR:
 	case E_SAR:  case E_SAL: case E_SHR: case E_SHL:
 	case E_XCHG: case E_MOV: case E_LEA:
-		e_del(e->v.bin.a);
-		e_del(e->v.bin.b);
+		e_del(e->v.bin.a, false);
+		e_del(e->v.bin.b, false);
 		break;
 	}
-	free(e);
+	
+	if (!keep)
+		free(e);
 }
 
 expr_t* e_cpy(expr_t* e)

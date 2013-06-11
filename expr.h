@@ -94,7 +94,7 @@ struct expr
 };
 
 expr_t* e_new();
-void    e_del(expr_t* e);
+void    e_del(expr_t* e, bool keep);
 expr_t* e_cpy(expr_t* e);
 
 // register, immediate, address

@@ -459,8 +459,8 @@ static bool isContextEnd(expr_t* e)
 			return true;
 		if (e->type == E_POP)
 		{
+			e_del(e, true);
 			e->type = E_NOP;
-			// TODO
 			return true;
 		}
 		return false;
@@ -472,8 +472,8 @@ void stripcontext(expr_t* e)
 {
 	for (; isContextInit(e); e = e->next)
 	{
+		e_del(e, true);
 		e->type = E_NOP;
-		// TODO
 	}
 
 	reset_visited(e);
@@ -512,9 +512,9 @@ static void postproc_aux1(expr_t* e)
 		expr_t* b = e->v.bin.b; postproc_aux1(b);
 		if (cmp_expr(a, b) == 0)
 		{
-			memcpy(&e, &a, sizeof(expr_t));
-//			e_del(b);
-			// TODO
+			free(e->label);
+			e_del(b, false);
+			memcpy(e, a, sizeof(expr_t));
 		}
 		break;
 	}
@@ -527,9 +527,8 @@ static void postproc_aux1(expr_t* e)
 			e->type = E_IM;
 			e->v.im.v = 0;
 			e->v.im.symbol = NULL;
-//			e_del(a);
-//			e_del(b);
-			// TODO
+			e_del(a, false);
+			e_del(b, false);
 		}
 		break;
 	}
