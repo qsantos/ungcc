@@ -180,7 +180,6 @@ For reminder, the context looks like:
 	}
 
 	case E_NOP:
-	case E_JMP:
 		// ignore
 		break;
 
@@ -197,6 +196,17 @@ For reminder, the context looks like:
 	PRINT_EXPR1(E_JL,   "jl");   PRINT_EXPR1(E_JLE, "jle");
 	PRINT_EXPR1(E_JG,   "jg");   PRINT_EXPR1(E_JGE, "jge");
 	PRINT_EXPR1(E_NOT,  "!");    PRINT_EXPR1(E_NEG, "~");
+
+	case E_JMP:
+		if (e->branch && e->branch->isFun)
+			PRTCHK(snprintf, "-> %s()", e->branch->label)
+		else
+		{
+			expr_t* a = e->v.uni.a;
+			if (a->type == E_IM && a->v.im.symbol)
+				PRTCHK(snprintf, "-> %s()", a->v.im.symbol)
+		}
+		break;
 
 	case E_CALL:
 		PRTCHK(print_expr, e->v.bin.a);
