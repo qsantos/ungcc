@@ -399,6 +399,12 @@ size_t functions(elist_t* dst, elist_t* l, size_t entryPoint)
 		if (e->isFun)
 		{
 			elist_push(dst, o, e);
+			if (e->label == NULL)
+			{
+				char buf[1024];
+				snprintf(buf, 1024, "fct%zu", dst->n);
+				e->label = strdup(buf);
+			}
 			if (i)
 			{
 				l->e[i-1].e->next = NULL;
