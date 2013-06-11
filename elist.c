@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "print.h" // TODO
+#include "print.h"
 
 void elist_new(elist_t* l)
 {
@@ -420,12 +420,7 @@ static bool isContextInit(expr_t* e)
 {
 	if (e->type == E_PUSH)
 	{
-		expr_t* a = e->v.uni.a;
-		if (a->type == E_REG)
-		{
-			rtype_t reg = a->v.reg.t;
-			return reg == R_BP || reg == R_DI || reg == R_SI || reg == R_BX;
-		}
+		return true;
 	}
 	if (e->type == E_MOV)
 	{
@@ -437,7 +432,45 @@ static bool isContextInit(expr_t* e)
 			rtype_t reg_b = b->v.reg.t;
 			return reg_a == R_BP && reg_b == R_SP;
 		}
+		else
+			return a->type == E_REG && isContextInit(b);
+
 	}
+	if (e->type == E_AND)
+	{
+		expr_t* a = e->v.bin.a;
+		expr_t* b = e->v.bin.b;
+		return a->type == E_REG && a->v.reg.t == R_SP && b->type == E_IM;
+	}
+	if (e->type == E_SUB)
+	{
+		expr_t* a = e->v.bin.a;
+		expr_t* b = e->v.bin.b;
+		return a->type == E_REG && a->v.reg.t == R_SP && b->type == E_IM;
+	}
+	return false;
+}
+static bool isContextEnd(expr_t* e)
+{
+	if (e == NULL)  return true;
+	if (e->visited) return false;
+	e->visited = true;
+
+	bool nextIsContext = isContextEnd(e->next);
+	if (e->branch == NULL && nextIsContext)
+	{
+		if (e->type == E_RET)
+			return true;
+		if (e->type == E_POP)
+		{
+			e->type = E_NOP;
+			// TODO
+			return true;
+		}
+		return false;
+	}
+
+	isContextEnd(e->branch);
 	return false;
 }
 void stripcontext(expr_t* e)
@@ -447,6 +480,9 @@ void stripcontext(expr_t* e)
 		e->type = E_NOP;
 		// TODO
 	}
+
+	reset_visited(e);
+	isContextEnd(e);
 }
 
 #define POST1(T) case T: postproc_aux1(e->v.uni.a); break;

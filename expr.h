@@ -76,7 +76,6 @@ struct expr
 		reg_t                          reg;
 		im_t                           im;
 		addr_t                         addr;
-		char*                          fun; // TODO
 		struct {expr_t* a;           } uni;
 		struct {expr_t* a; expr_t* b;} bin;
 	} v;
