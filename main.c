@@ -44,11 +44,14 @@ int main(int argc, char** argv)
 
 	read_file(&el, input);
 	functions(&fl, &el, entryPoint);
-	expr_t* e = fl.e[1].e;
-	stripcontext(e);
-	postproc(e);
-//	reduc(e);
-	zui(argc, argv, e);
+	for (size_t i = 0; i < fl.n; i++)
+	{
+		expr_t* e = fl.e[i].e;
+		stripcontext(e);
+		postproc(e);
+		//reduc(e);
+	}
+	zui(argc, argv, &fl);
 
 	elist_del(&fl);
 	elist_del(&el);

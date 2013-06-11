@@ -28,7 +28,8 @@ static double viewZoom = 1;
 static const double blockScale = 0.1;
 static const double blockPadding = 20;
 
-static expr_t*  function;
+static elist_t* funList;
+static size_t   curFunct;
 static block_t* curBlock;
 static blist_t  blocks;
 
@@ -68,6 +69,21 @@ static inline void blist_setdim(blist_t* l)
 		b->h = blockScale * lines * glutStrokeHeight(FONT);
 	}
 }
+
+static void setCurFunct(size_t i)
+{
+	curFunct = i;
+	blist_gen   (&blocks, funList->e[curFunct].e);
+	blist_setdim(&blocks);
+	blist_spread(&blocks);
+
+	curBlock = blocks.b;
+	viewX = curBlock->x;
+	viewY = curBlock->y;
+
+	glutPostRedisplay();
+}
+
 static void blist_display(blist_t* l)
 {
 	for (size_t i = 0; i < l->n; i++)
@@ -132,6 +148,24 @@ static void cb_displayFunc()
 
 	glPushMatrix();
 	glLoadIdentity();
+	glTranslatef(20, 20, 0);
+	glScalef(0.08, -0.08, 0.08);
+	for (size_t i = 0; i < funList->n; i++)
+	{
+		if (i == curFunct)
+			glColor4f(1, 0, 0, 1);
+		else
+			glColor4f(1, 1, 1, 1);
+
+		expr_t* fun = funList->e[i].e;
+		char glText[BUFSIZE];
+		snprintf(glText, BUFSIZE, "%s\n", fun->label);
+		glutStrokeString(FONT, (unsigned char*) glText);
+	}
+	glPopMatrix();
+
+	glPushMatrix();
+	glLoadIdentity();
 	glColor4f(1, 1, 1, 1);
 	glBegin(GL_QUADS);
 		glVertex2f(winWidth/2 - CURSOR_SZ, winHeight/2 - CURSOR_SZ);
@@ -164,10 +198,30 @@ static void cb_keyboardFunc(unsigned char key, int x, int y)
 	(void) x;
 	(void) y;
 
-	if (key == 'r')
+	switch (key)
 	{
+	case 'r':
 		blist_spread(&blocks);
 		glutPostRedisplay();
+		break;
+	}
+}
+
+static void cb_specialFunc(int key, int x, int y)
+{
+	(void) x;
+	(void) y;
+
+	switch (key)
+	{
+	case GLUT_KEY_PAGE_UP:
+		blist_del(&blocks);
+		setCurFunct(curFunct ? curFunct - 1 : funList->n - 1);
+		break;
+	case GLUT_KEY_PAGE_DOWN:
+		blist_del(&blocks);
+		setCurFunct(curFunct < funList->n-1 ? curFunct + 1 : 0);
+		break;
 	}
 }
 
@@ -248,7 +302,7 @@ static void glInit()
 //	glTranslatef(0.375, 0.375, 0); // hack against pixel centered coordinates
 }
 
-void zui(int argc, char** argv, expr_t* fun)
+void zui(int argc, char** argv, elist_t* l)
 {
 	glutInit(&argc, argv);
 	glutInitWindowSize(winWidth, winHeight);
@@ -258,14 +312,16 @@ void zui(int argc, char** argv, expr_t* fun)
 	glutDisplayFunc      (&cb_displayFunc);
 	glutReshapeFunc      (&cb_reshapeFunc);
 	glutKeyboardFunc     (&cb_keyboardFunc);
+	glutSpecialFunc      (&cb_specialFunc);
 	glutMouseFunc        (&cb_mouseFunc);
 	glutMotionFunc       (&cb_motionFunc);
 	glutPassiveMotionFunc(&cb_passiveMotionFunc);
 
 	glInit();
 
-	function = fun;
-	blist_gen   (&blocks, function);
+	funList  = l;
+	curFunct = 0;
+	blist_gen   (&blocks, funList->e[curFunct].e);
 	blist_setdim(&blocks);
 	blist_spread(&blocks);
 
