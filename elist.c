@@ -535,11 +535,11 @@ static void reduc_aux1(expr_t* r, expr_t* e, expr_t** last)
 		if (e->v.op.t == REG)
 		{
 			expr_t* l = last[e->v.op.v.reg];
-			if (l && l->next == r)
-			{
+			if (l == NULL)
+				break;
+			if (l->next == r) // to avoid reordering
 				e->v.op.last = l;
-				l->used++;
-			}
+			l->used++;
 		}
 		break;
 
