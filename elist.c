@@ -244,6 +244,7 @@ void read_instr(elist_t* dst, size_t of, char* str)
 	BIN_F("sar" , e_sar ) BIN_F("sal", e_sal) BIN_F("shr", e_shr) BIN_F("shl", e_shl)
 
 	fprintf(stderr, "Unknown instruction '%s'\n", opcode);
+	elist_push(dst, of, e_unk(strdup(opcode)));
 }
 
 void read_file(elist_t* dst, FILE* f)

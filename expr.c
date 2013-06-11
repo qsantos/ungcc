@@ -20,6 +20,10 @@ void e_del(expr_t* e, bool keep)
 {
 	switch (e->type)
 	{
+	case E_UNK:
+		free(e->v.unk);
+		break;
+
 	case E_REG:
 		break;
 	case E_IM:
@@ -68,6 +72,10 @@ expr_t* e_cpy(expr_t* e)
 	ret->type = e->type;
 	switch (e->type)
 	{
+	case E_UNK:
+		ret->v.unk = strdup(e->v.unk);
+		break;
+
 	case E_REG:
 		ret->v.reg.t    = e->v.reg.t;
 		ret->v.reg.last = e->v.reg.last;
@@ -110,6 +118,14 @@ expr_t* e_cpy(expr_t* e)
 		ret->v.bin.b = e_cpy(e->v.bin.b);
 		break;
 	}
+	return ret;
+}
+
+expr_t* e_unk(char* comment)
+{
+	expr_t* ret = e_new();
+	ret->type = E_UNK;
+	ret->v.unk = comment;
 	return ret;
 }
 
@@ -208,6 +224,9 @@ int cmp_expr(expr_t* a, expr_t* b)
 		return 1;
 	switch (a->type)
 	{
+	case E_UNK:
+		return 1;
+
 	case E_REG:
 		return a->v.reg.t == b->v.reg.t ? 0 : 1;
 	case E_IM:

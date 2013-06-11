@@ -74,6 +74,10 @@ size_t print_expr(char* str, size_t size, expr_t* e)
 
 	switch (e->type)
 	{
+	case E_UNK:
+		PRTCHK(snprintf, "Unsupported '%s'", e->v.unk);
+		break;
+
 	case E_REG:
 	{
 		expr_t* l = e->v.reg.last;

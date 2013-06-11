@@ -47,6 +47,9 @@ typedef struct
 
 typedef enum
 {
+	// unknown
+	E_UNK,
+
 	// register, immediate or address
 	E_REG, E_IM, E_ADDR,
 
@@ -73,6 +76,7 @@ struct expr
 	etype_t type;
 	union
 	{
+		char*                          unk;
 		reg_t                          reg;
 		im_t                           im;
 		addr_t                         addr;
@@ -96,6 +100,8 @@ struct expr
 expr_t* e_new();
 void    e_del(expr_t* e, bool keep);
 expr_t* e_cpy(expr_t* e);
+
+expr_t* e_unk(char* comment);
 
 // register, immediate, address
 expr_t* e_reg (rtype_t reg);
