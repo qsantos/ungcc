@@ -47,7 +47,7 @@ int main(int argc, char** argv)
 	expr_t* e = fl.e[main_idx].e;
 	stripcontext(e);
 	postproc(e);
-	reduc(e);
+//	reduc(e);
 	zui(argc, argv, e);
 
 	elist_del(&fl);

@@ -568,6 +568,8 @@ static void reduc_aux1(expr_t* r, expr_t* e, expr_t** last)
 			break;
 		if (l->next == r) // to avoid reordering
 			e->v.reg.last = l;
+		else
+			l->used++; // in doubt, block it
 		l->used++;
 		break;
 	}

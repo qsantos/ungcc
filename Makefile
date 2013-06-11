@@ -1,6 +1,6 @@
 CC      = gcc
-CFLAGS  = -Wall -Wextra -Werror -pedantic -ansi -std=c99 -O3 -D_XOPEN_SOURCE=700
-LDFLAGS = -O3 -lm -lGL -lGLU -lglut
+CFLAGS  = -Wall -Wextra -Werror -pedantic -ansi -std=c99 -O2 -D_XOPEN_SOURCE=700
+LDFLAGS = -O2 -lm -lGL -lGLU -lglut
 TARGETS = ungcc
 
 all: $(TARGETS)
