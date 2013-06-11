@@ -169,10 +169,10 @@ static void cb_displayFunc()
 	glLoadIdentity();
 	glColor4f(1, 1, 1, 1);
 	glBegin(GL_QUADS);
-		glVertex2f(winWidth/2 - CURSOR_SZ, winHeight/2 - CURSOR_SZ);
-		glVertex2f(winWidth/2 + CURSOR_SZ, winHeight/2 - CURSOR_SZ);
-		glVertex2f(winWidth/2 + CURSOR_SZ, winHeight/2 + CURSOR_SZ);
-		glVertex2f(winWidth/2 - CURSOR_SZ, winHeight/2 + CURSOR_SZ);
+		glVertex2f(mouseX - CURSOR_SZ, mouseY - CURSOR_SZ);
+		glVertex2f(mouseX + CURSOR_SZ, mouseY - CURSOR_SZ);
+		glVertex2f(mouseX + CURSOR_SZ, mouseY + CURSOR_SZ);
+		glVertex2f(mouseX - CURSOR_SZ, mouseY + CURSOR_SZ);
 	glEnd();
 	glPopMatrix();
 
@@ -241,6 +241,7 @@ static void cb_mouseFunc(int button, int state, int _x, int _y)
 		GLdouble projectionM[16]; glGetDoublev(GL_PROJECTION_MATRIX, projectionM);
 		int viewport[4];          glGetIntegerv(GL_VIEWPORT, viewport);
 		double x, y, z;
+		_y = viewport[3] - _y;
 		gluUnProject(_x, _y, 0, modelviewM, projectionM, viewport, &x, &y, &z);
 
 		// amongst the clicked blocks, find the closest one
@@ -270,14 +271,8 @@ static void cb_mouseFunc(int button, int state, int _x, int _y)
 
 static void cb_passiveMotionFunc(int x, int y)
 {
-	if (mouseX == x && mouseY == y)
-		return;
-
-	viewX += (x - mouseX) / viewZoom;
-	viewY += (y - mouseY) / viewZoom;
-	mouseX = winWidth / 2;
-	mouseY = winHeight / 2;
-	glutWarpPointer(mouseX, mouseY);
+	mouseX = x;
+	mouseY = y;
 
 	glutPostRedisplay();
 }
@@ -288,8 +283,11 @@ static void cb_motionFunc(int x, int y)
 	{
 		curBlock->x += (x - mouseX) / viewZoom;
 		curBlock->y += (y - mouseY) / viewZoom;
-		mouseX = winWidth / 2;
-		mouseY = winHeight / 2;
+	}
+	else
+	{
+		viewX += (mouseX - x) / viewZoom;
+		viewY += (mouseY - y) / viewZoom;
 	}
 
 	cb_passiveMotionFunc(x, y);
