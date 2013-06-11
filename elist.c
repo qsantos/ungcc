@@ -298,7 +298,7 @@ void read_file(elist_t* dst, FILE* f)
 	free(line);
 }
 
-size_t functions(elist_t* dst, elist_t* l, size_t entryPoint)
+void functions(elist_t* dst, elist_t* l, size_t entryPoint)
 {
 	// builds hierarchy
 	for (size_t i = 0; i < l->n; i++)
@@ -389,21 +389,23 @@ size_t functions(elist_t* dst, elist_t* l, size_t entryPoint)
 
 	// lists functions
 	elist_new(dst);
-	size_t ret = 0;
 	for (size_t i = 0; i < l->n; i++)
 	{
 		expr_t* e = l->e[i].e;
 		size_t  o = l->e[i].o;
-		if (o == mainAddr)
-			ret = dst->n;
 		if (e->isFun)
 		{
 			elist_push(dst, o, e);
 			if (e->label == NULL)
 			{
-				char buf[1024];
-				snprintf(buf, 1024, "fct%zu", dst->n);
-				e->label = strdup(buf);
+				if (o == mainAddr)
+					e->label = "main";
+				else
+				{
+					char buf[1024];
+					snprintf(buf, 1024, "fct%zu", dst->n);
+					e->label = strdup(buf);
+				}
 			}
 			if (i)
 			{
@@ -412,8 +414,6 @@ size_t functions(elist_t* dst, elist_t* l, size_t entryPoint)
 			}
 		}
 	}
-
-	return ret;
 }
 
 static bool isContextInit(expr_t* e)

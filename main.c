@@ -43,8 +43,8 @@ int main(int argc, char** argv)
 	elist_t fl; // function list
 
 	read_file(&el, input);
-	size_t main_idx = functions(&fl, &el, entryPoint);
-	expr_t* e = fl.e[main_idx].e;
+	functions(&fl, &el, entryPoint);
+	expr_t* e = fl.e[1].e;
 	stripcontext(e);
 	postproc(e);
 //	reduc(e);
