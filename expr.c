@@ -189,7 +189,7 @@ E_BIN(xchg, E_XCHG) E_BIN(mov, E_MOV) E_BIN(lea, E_LEA)
 
 void reset_visited(expr_t* e)
 {
-	if (e == NULL || e->visited == false)
+	if (e == NULL || !e->visited)
 		return;
 	e->visited = false;
 

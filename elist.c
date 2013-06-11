@@ -410,12 +410,6 @@ size_t functions(elist_t* dst, elist_t* l, size_t entryPoint)
 	return ret;
 }
 
-/*
-TODO
- 80490b6:       83 e4 f0                and    $0xfffffff0,%esp
- 80490b9:       83 ec 40                sub    $0x40,%esp
-*/
-
 static bool isContextInit(expr_t* e)
 {
 	if (e->type == E_PUSH)
@@ -457,6 +451,8 @@ static bool isContextEnd(expr_t* e)
 	e->visited = true;
 
 	bool nextIsContext = isContextEnd(e->next);
+	isContextEnd(e->branch);
+
 	if (e->branch == NULL && nextIsContext)
 	{
 		if (e->type == E_RET)
@@ -470,7 +466,6 @@ static bool isContextEnd(expr_t* e)
 		return false;
 	}
 
-	isContextEnd(e->branch);
 	return false;
 }
 void stripcontext(expr_t* e)
@@ -483,6 +478,7 @@ void stripcontext(expr_t* e)
 
 	reset_visited(e);
 	isContextEnd(e);
+	reset_visited(e); // HACK: unexpected behaviour, does not reset 'visited' in postproc() without this
 }
 
 #define POST1(T) case T: postproc_aux1(e->v.uni.a); break;
@@ -516,15 +512,9 @@ static void postproc_aux1(expr_t* e)
 		expr_t* b = e->v.bin.b; postproc_aux1(b);
 		if (cmp_expr(a, b) == 0)
 		{
-			(void) a;
-			(void) b;
-/*
+			memcpy(&e, &a, sizeof(expr_t));
+//			e_del(b);
 			// TODO
-			e->type = E_OPERAND;
-			memcpy(&e->v.op, &a->v.op, sizeof(operand_t));
-			e_del(a);
-			e_del(b);
-*/
 		}
 		break;
 	}
@@ -534,17 +524,12 @@ static void postproc_aux1(expr_t* e)
 		expr_t* b = e->v.bin.b; postproc_aux1(b);
 		if (cmp_expr(a, b) == 0)
 		{
-			(void) a;
-			(void) b;
-/*
+			e->type = E_IM;
+			e->v.im.v = 0;
+			e->v.im.symbol = NULL;
+//			e_del(a);
+//			e_del(b);
 			// TODO
-			e->type = E_OPERAND;
-			e->v.op.t = IM;
-			e->v.op.v.im = 0;
-			e->v.op.symbol = NULL;
-			e_del(a);
-			e_del(b);
-*/
 		}
 		break;
 	}
