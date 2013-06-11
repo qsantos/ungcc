@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "print.h"
+#include "print.h" // TODO
 
 void elist_new(elist_t* l)
 {
@@ -45,7 +45,7 @@ eopair_t* elist_at(elist_t* l, size_t o)
 	return bsearch(&key, l->e, l->n, sizeof(eopair_t), cmp_eopair);
 }
 
-char* read_register(reg_t* dst, size_t* sz, char* str)
+char* read_register(rtype_t* dst, size_t* sz, char* str)
 {
 	// register size
 	if (sz)
@@ -93,22 +93,22 @@ char* read_operand(expr_t** dst, size_t* sz, char* str)
 {
 	if (str[0] == '%') // register
 	{
-		reg_t reg;
+		rtype_t reg;
 		str = read_register(&reg, sz, str+1);
-		*dst = e_op_reg(reg);
+		*dst = e_reg(reg);
 
 		return str;
 	}
 	else if (str[0] == '$') // immediate
 	{
-		im_t im = strtoul(str+1, (char**) &str, 16);
-		*dst = e_op_im(im);
+		size_t im = strtoul(str+1, (char**) &str, 16);
+		*dst = e_im(im);
 		return str;
 	}
 	else if ('0' <= str[0] && str[0] <= '9' && str[1] != 'x') // immediate address
 	{
-		im_t im = strtoul(str, (char**) &str, 16);
-		*dst = e_op_im(im);
+		size_t im = strtoul(str, (char**) &str, 16);
+		*dst = e_im(im);
 
 		// read symbol
 		if (strchr(str, '+') == NULL) // no offset
@@ -116,7 +116,7 @@ char* read_operand(expr_t** dst, size_t* sz, char* str)
 			str += 2; // " <"
 			char* end = strchr(str, '@');
 			if (!end) end = strchr(str, '>');
-			(*dst)->v.op.symbol = strndup(str, end - str);
+			(*dst)->v.im.symbol = strndup(str, end - str);
 		}
 		return str;
 	}
@@ -128,9 +128,9 @@ char* read_operand(expr_t** dst, size_t* sz, char* str)
 	// indirect address
 	if (str[0] == '%')
 	{
-		reg_t base = 0;
+		rtype_t base = 0;
 		str = read_register(&base, NULL, str+1);
-		*dst = e_op_addr(base, 0, 0, 0);
+		*dst = e_addr(base, 0, 0, 0);
 		return str;
 	}
 
@@ -138,28 +138,28 @@ char* read_operand(expr_t** dst, size_t* sz, char* str)
 
 	if (str[0] != '(')
 	{
-		*dst = e_op_addr(0, 0, 0, disp);
+		*dst = e_addr(0, 0, 0, disp);
 		return str;
 	}
 	str++;
 
-	reg_t base = 0;
+	rtype_t base = 0;
 	if (str[0] == '%')
 		str = read_register(&base, NULL, str+1);
 
 	if (str[0] != ',')
 	{
-		*dst = e_op_addr(base, 0, 0, disp);
+		*dst = e_addr(base, 0, 0, disp);
 		return str+1; // ')'
 	}
 	str++;
 
-	reg_t idx;
+	rtype_t idx;
 	str = read_register(&idx, NULL, str+1);
 	str++; // ','
 	size_t scale = strtoul(str, (char**) &str, 10);
 
-	*dst = e_op_addr(base, idx, scale, disp);
+	*dst = e_addr(base, idx, scale, disp);
 	return str+1; // ')'
 }
 
@@ -193,8 +193,8 @@ void read_instr(elist_t* dst, size_t of, char* str)
 
 	if (strcmp(opcode, "leave") == 0)
 	{
-		elist_push(dst, of, e_mov (e_op_reg(R_BP), e_op_reg(R_SP)));
-		elist_push(dst, of, e_push(e_op_reg(R_BP))); // TODO: two instructions with same offset
+		elist_push(dst, of, e_mov (e_reg(R_BP), e_reg(R_SP)));
+		elist_push(dst, of, e_push(e_reg(R_BP))); // TODO: two instructions with same offset
 		return;
 	}
 
@@ -214,7 +214,7 @@ void read_instr(elist_t* dst, size_t of, char* str)
 
 	if (strcmp(opcode, "call") == 0)
 	{
-		elist_push(dst, of, e_mov(e_op_reg(R_AX), e_call(a)));
+		elist_push(dst, of, e_mov(e_reg(R_AX), e_call(a)));
 		return;
 	}
 
@@ -228,12 +228,12 @@ void read_instr(elist_t* dst, size_t of, char* str)
 	// binary
 	if (strcmp(opcode, "test") == 0)
 	{
-		elist_push(dst, of, e_mov(e_op_reg(R_FL), e_and(b, a)));
+		elist_push(dst, of, e_mov(e_reg(R_FL), e_and(b, a)));
 		return;
 	}
 	if (strcmp(opcode, "cmp") == 0 || strcmp(opcode, "cmpl") == 0 || strcmp(opcode, "cmpb") == 0)
 	{
-		elist_push(dst, of, e_mov(e_op_reg(R_FL), e_sub(b, a)));
+		elist_push(dst, of, e_mov(e_reg(R_FL), e_sub(b, a)));
 		return;
 	}
 	BIN("xchg", e_xchg) BIN("mov", e_mov) BIN("lea", e_lea)
@@ -314,17 +314,17 @@ size_t functions(elist_t* dst, elist_t* l, size_t entryPoint)
 			continue;
 
 		expr_t* a = e->v.uni.a;
-		if (a->type != E_OPERAND || a->v.op.t != IM)
+		if (a->type != E_IM)
 		{
 			fprintf(stderr, "Unsupported instruction at %#x: ", l->e[i].o);
 			fprint_stat(stderr, e);
 			continue;
 		}
 
-		eopair_t* p = elist_at(l, a->v.op.v.im);
+		eopair_t* p = elist_at(l, a->v.im.v);
 		if (!p)
 		{
-			fprintf(stderr, "Unknown offset %#x\n", a->v.op.v.im);
+			fprintf(stderr, "Unknown offset %#x\n", a->v.im.v);
 			continue;
 		}
 
@@ -347,14 +347,14 @@ size_t functions(elist_t* dst, elist_t* l, size_t entryPoint)
 			continue;
 
 		expr_t* b = a->v.uni.a;
-		if (b->type != E_OPERAND || b->v.op.t != IM)
+		if (b->type != E_IM)
 		{
 			fprintf(stderr, "Unsupported instruction at %#x: ", l->e[i].o);
 			fprint_stat(stderr, a);
 			continue;
 		}
 
-		eopair_t* p = elist_at(l, b->v.op.v.im);
+		eopair_t* p = elist_at(l, b->v.im.v);
 		if (!p)
 			continue;
 		p->e->isFun = true;
@@ -369,14 +369,14 @@ size_t functions(elist_t* dst, elist_t* l, size_t entryPoint)
 	// finds main() address, right before the call to __libc_start_main@plt
 	for (; !(p->e->type == E_MOV && p->e->v.bin.b->type == E_CALL); p++);
 	p--;
-	expr_t* op = p->e->v.uni.a;
-	if (p->e->type != E_PUSH || !op || op->type != E_OPERAND || op->v.op.t != IM)
+	expr_t* a = p->e->v.uni.a;
+	if (p->e->type != E_PUSH || !a || a->type != E_IM)
 	{
 		fprintf(stderr, "Unexpected instruction:\n");
 		fprint_stat(stderr, p->e);
 		exit(1);
 	}
-	size_t mainAddr = p->e->v.uni.a->v.op.v.im;
+	size_t mainAddr = a->v.im.v;
 
 	// marks main() as a function
 	p = elist_at(l, mainAddr);
@@ -411,6 +411,7 @@ size_t functions(elist_t* dst, elist_t* l, size_t entryPoint)
 }
 
 /*
+TODO
  80490b6:       83 e4 f0                and    $0xfffffff0,%esp
  80490b9:       83 ec 40                sub    $0x40,%esp
 */
@@ -420,9 +421,9 @@ static bool isContextInit(expr_t* e)
 	if (e->type == E_PUSH)
 	{
 		expr_t* a = e->v.uni.a;
-		if (a->type == E_OPERAND && a->v.op.t == REG)
+		if (a->type == E_REG)
 		{
-			reg_t reg = a->v.op.v.reg;
+			rtype_t reg = a->v.reg.t;
 			return reg == R_BP || reg == R_DI || reg == R_SI || reg == R_BX;
 		}
 	}
@@ -430,11 +431,10 @@ static bool isContextInit(expr_t* e)
 	{
 		expr_t* a = e->v.bin.a;
 		expr_t* b = e->v.bin.b;
-		if (a->type == E_OPERAND && a->v.op.t == REG &&
-		    b->type == E_OPERAND && b->v.op.t == REG)
+		if (a->type == E_REG && b->type == E_REG)
 		{
-			reg_t reg_a = a->v.op.v.reg;
-			reg_t reg_b = b->v.op.v.reg;
+			rtype_t reg_a = a->v.reg.t;
+			rtype_t reg_b = b->v.reg.t;
 			return reg_a == R_BP && reg_b == R_SP;
 		}
 	}
@@ -478,12 +478,17 @@ static void postproc_aux1(expr_t* e)
 	{
 		expr_t* a = e->v.bin.a; postproc_aux1(a);
 		expr_t* b = e->v.bin.b; postproc_aux1(b);
-		if (a->type == E_OPERAND && b->type == E_OPERAND && cmp_op(&a->v.op, &b->v.op) == 0)
+		if (cmp_expr(a, b) == 0)
 		{
+			(void) a;
+			(void) b;
+/*
+			// TODO
 			e->type = E_OPERAND;
 			memcpy(&e->v.op, &a->v.op, sizeof(operand_t));
 			e_del(a);
 			e_del(b);
+*/
 		}
 		break;
 	}
@@ -491,14 +496,19 @@ static void postproc_aux1(expr_t* e)
 	{
 		expr_t* a = e->v.bin.a; postproc_aux1(a);
 		expr_t* b = e->v.bin.b; postproc_aux1(b);
-		if (a->type == E_OPERAND && b->type == E_OPERAND && cmp_op(&a->v.op, &b->v.op) == 0)
+		if (cmp_expr(a, b) == 0)
 		{
+			(void) a;
+			(void) b;
+/*
+			// TODO
 			e->type = E_OPERAND;
 			e->v.op.t = IM;
 			e->v.op.v.im = 0;
 			e->v.op.symbol = NULL;
-//			e_del(a); // TODO
+			e_del(a);
 			e_del(b);
+*/
 		}
 		break;
 	}
@@ -531,17 +541,16 @@ static void reduc_aux1(expr_t* r, expr_t* e, expr_t** last)
 {
 	switch (e->type)
 	{
-	case E_OPERAND:
-		if (e->v.op.t == REG)
-		{
-			expr_t* l = last[e->v.op.v.reg];
-			if (l == NULL)
-				break;
-			if (l->next == r) // to avoid reordering
-				e->v.op.last = l;
-			l->used++;
-		}
+	case E_REG:
+	{
+		expr_t* l = last[e->v.reg.t];
+		if (l == NULL)
+			break;
+		if (l->next == r) // to avoid reordering
+			e->v.reg.last = l;
+		l->used++;
 		break;
+	}
 
 	// unary
 	REDUC1(E_PUSH); REDUC1(E_POP);
@@ -578,9 +587,9 @@ static void reduc_aux2(expr_t* e, expr_t** last)
 	reduc_aux1(e, e, last);
 
 	expr_t* a = e->v.bin.a;
-	if (e->type == E_MOV && a->type == E_OPERAND && a->v.op.t == REG)
+	if (e->type == E_MOV && a->type == E_REG)
 	{
-		reg_t reg = a->v.op.v.reg;
+		rtype_t reg = a->v.reg.t;
 		expr_t* prev = last[reg];
 		last[reg] = e;
 		reduc_aux2(e->next, last);

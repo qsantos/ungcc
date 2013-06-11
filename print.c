@@ -2,7 +2,7 @@
 
 #define PRTCHK(FCT, ...) {ret+=FCT(str+ret,size-ret,__VA_ARGS__);if(ret>=size)return ret;}
 
-size_t print_reg(char* str, size_t size, reg_t reg, size_t s)
+size_t print_reg(char* str, size_t size, rtype_t reg, size_t s)
 {
 	size_t ret = 0;
 
@@ -37,40 +37,60 @@ size_t print_reg(char* str, size_t size, reg_t reg, size_t s)
 	return ret;
 }
 
-size_t print_hex(char* str, size_t size, im_t im)
+size_t print_hex(char* str, size_t size, ssize_t v)
 {
 	size_t ret = 0;
 
-	if (im < 0)
-		PRTCHK(snprintf, "-%#x", -im)
+	if (v < 0)
+		PRTCHK(snprintf, "-%#x", -v)
 	else
-		PRTCHK(snprintf, "%#x", im)
+		PRTCHK(snprintf, "%#x", v)
 
 	return ret;
 }
 
-size_t print_op(char* str, size_t size, operand_t* op, size_t s)
+#define PRINT_EXPR0(O,N) case O: \
+	PRTCHK(snprintf, N); \
+	break;
+
+#define PRINT_EXPR1(O,N) case O: \
+	PRTCHK(snprintf, N " "); \
+	PRTCHK(print_expr, e->v.bin.a); \
+	break;
+
+#define PRINT_EXPR2(O,N) case O: \
+	PRTCHK(print_expr, e->v.bin.a); \
+	PRTCHK(snprintf, " " N " "); \
+	PRTCHK(print_expr, e->v.bin.b); \
+	break;
+
+size_t print_expr(char* str, size_t size, expr_t* e)
 {
 	size_t ret = 0;
+	*str = 0;
 
-	if (op->symbol)
-	{
-		PRTCHK(snprintf, "%s", op->symbol);
+	if (e->used == 1)
 		return ret;
+
+	switch (e->type)
+	{
+	case E_REG:
+	{
+		expr_t* l = e->v.reg.last;
+		if (l && l->used == 1)
+			PRTCHK(print_expr, l->v.bin.b)
+		else
+			PRTCHK(print_reg, e->v.reg.t, 32)
+		break;
 	}
 
-	if (op->last && op->last->used == 1)
+	case E_IM:
 	{
-		PRTCHK(print_expr, op->last->v.bin.b);
-		return ret;
-	}
-
-	if (op->t == REG)
-		PRTCHK(print_reg, op->v.reg, s)
-	else if (op->t == IM)
-	{
-		size_t v = op->v.im;
-		if (0x1f < v && v < 0x7f)
+		size_t v = e->v.im.v;
+		char*  s = e->v.im.symbol;
+		if (s)
+			PRTCHK(snprintf, "%s", s)
+		else if (0x1f < v && v < 0x7f)
 			PRTCHK(snprintf, "'%c'", v)
 		else if (v < 0x8048000)
 			PRTCHK(snprintf, "%zi", v)
@@ -79,10 +99,12 @@ size_t print_op(char* str, size_t size, operand_t* op, size_t s)
 			PRTCHK(snprintf, "$");
 			PRTCHK(print_hex, v);
 		}
+		break;
 	}
-	else if (op->t == ADDR)
+
+	case E_ADDR:
 	{
-		addr_t* a = &op->v.addr;
+		addr_t* a = &e->v.addr;
 /*
 For reminder, the context looks like:
 
@@ -153,40 +175,6 @@ For reminder, the context looks like:
 		}
 	}
 
-	return ret;
-}
-
-#define PRINT_EXPR0(O,N) case O: \
-	PRTCHK(snprintf, N); \
-	break;
-
-#define PRINT_EXPR1(O,N) case O: \
-	PRTCHK(snprintf, N " "); \
-	PRTCHK(print_expr, e->v.bin.a); \
-	break;
-
-#define PRINT_EXPR2(O,N) case O: \
-	PRTCHK(print_expr, e->v.bin.a); \
-	PRTCHK(snprintf, " " N " "); \
-	PRTCHK(print_expr, e->v.bin.b); \
-	break;
-
-size_t print_expr(char* str, size_t size, expr_t* e)
-{
-	size_t ret = 0;
-	*str = 0;
-
-	if (e->used == 1)
-		return ret;
-
-	if (e->type == E_OPERAND)
-	{
-		PRTCHK(print_op, &e->v.op, 32);
-		return ret;
-	}
-
-	switch (e->type)
-	{
 	case E_NOP:
 	case E_JMP:
 		// ignore

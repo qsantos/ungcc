@@ -20,7 +20,14 @@ void e_del(expr_t* e)
 {
 	switch (e->type)
 	{
-	case E_OPERAND:
+	case E_REG:
+		break;
+	case E_IM:
+		free(e->v.im.symbol);
+		break;
+	case E_ADDR:
+		break;
+
 	// zeroary
 	case E_NOP:
 	case E_RET:
@@ -59,9 +66,19 @@ expr_t* e_cpy(expr_t* e)
 	ret->type = e->type;
 	switch (e->type)
 	{
-	case E_OPERAND:
-		memcpy(&ret->v.op, &e->v.op, sizeof(operand_t));
+	case E_REG:
+		ret->v.reg.t    = e->v.reg.t;
+		ret->v.reg.last = e->v.reg.last;
 		break;
+	case E_IM:
+		ret->v.im.v = e->v.im.v;
+		break;
+	case E_ADDR:
+		ret->v.addr.base  = e->v.addr.base;
+		ret->v.addr.idx   = e->v.addr.idx;
+		ret->v.addr.scale = e->v.addr.scale,
+		ret->v.addr.disp  = e->v.addr.disp;
+
 	// zeroary
 	case E_NOP:
 	case E_RET:
@@ -94,39 +111,35 @@ expr_t* e_cpy(expr_t* e)
 	return ret;
 }
 
-// operand
-expr_t* e_op(enum op_type t)
+// register
+expr_t* e_reg(rtype_t reg)
 {
 	expr_t* ret = e_new();
-	ret->type   = E_OPERAND;
-	ret->v.op.t = t;
-	ret->v.op.symbol = NULL;
-	ret->v.op.last   = NULL;
+	ret->type       = E_REG;
+	ret->v.reg.t    = reg;
+	ret->v.reg.last = NULL;
 	return ret;
 }
 
-expr_t* e_op_reg(reg_t reg)
+// immediate
+expr_t* e_im(ssize_t im)
 {
-	expr_t* ret = e_op(REG);
-	ret->v.op.v.reg  = reg;
+	expr_t* ret = e_new();
+	ret->type        = E_IM;
+	ret->v.im.v      = im;
+	ret->v.im.symbol = NULL;
 	return ret;
 }
 
-expr_t* e_op_im(im_t im)
+// address
+expr_t* e_addr(rtype_t base, rtype_t idx, size_t scale, ssize_t disp)
 {
-	expr_t* ret = e_op(IM);
-	ret->v.op.v.im = im;
-	return ret;
-}
-
-expr_t* e_op_addr(reg_t base, reg_t idx, im_t scale, im_t disp)
-{
-	expr_t* ret = e_op(ADDR);
-	ret->type   = E_OPERAND;
-	ret->v.op.v.addr.base  = base;
-	ret->v.op.v.addr.idx   = idx;
-	ret->v.op.v.addr.scale = scale;
-	ret->v.op.v.addr.disp  = disp;
+	expr_t* ret = e_new();
+	ret->type         = E_ADDR;
+	ret->v.addr.base  = base;
+	ret->v.addr.idx   = idx;
+	ret->v.addr.scale = scale;
+	ret->v.addr.disp  = disp;
 	return ret;
 }
 
@@ -137,9 +150,9 @@ expr_t* e_op_addr(reg_t base, reg_t idx, im_t scale, im_t disp)
 	ret->type = T; \
 	return ret; \
 }
-E_ZER(nop  , E_NOP  )
-E_ZER(ret  , E_RET  )
-E_ZER(hlt  , E_HLT  )
+E_ZER(nop, E_NOP)
+E_ZER(ret, E_RET)
+E_ZER(hlt, E_HLT)
 
 // unary
 #define E_UNI(N, T) expr_t* e_##N(expr_t* a) \
@@ -184,13 +197,47 @@ void reset_visited(expr_t* e)
 	reset_visited(e->branch);
 }
 
-int cmp_op(operand_t* a, operand_t* b)
+#define CMP1(T) case T: return cmp_expr(a->v.uni.a, b->v.uni.a);
+#define CMP2(T) case T: return cmp_expr(a->v.bin.a, b->v.bin.a) || cmp_expr(a->v.bin.b, b->v.bin.b);
+
+int cmp_expr(expr_t* a, expr_t* b)
 {
-	if (a->t != b->t) return 1;
+	if (a->type != b->type)
+		return 1;
+	switch (a->type)
+	{
+	case E_REG:
+		return a->v.reg.t == b->v.reg.t ? 0 : 1;
+	case E_IM:
+		return a->v.im.v == b->v.im.v ? 0 : 1;
+	case E_ADDR:
+		return a->v.addr.base  == b->v.addr.base  &&
+		       a->v.addr.idx   == b->v.addr.idx   &&
+		       a->v.addr.scale == b->v.addr.scale &&
+		       a->v.addr.disp  == b->v.addr.disp ? 0 : 1;
 
-	if (a->t == REG)  return a->v.reg  == b->v.reg  ? 0 : 1;
-	if (a->t == IM)   return a->v.im   == b->v.im   ? 0 : 1;
-	if (a->t == ADDR) return memcmp(&a->v.addr, &b->v.addr, sizeof(addr_t));
+	// zeroary
+	case E_NOP:
+	case E_RET:
+	case E_HLT:
+		return 0;
+	// unary
+	CMP1(E_PUSH); CMP1(E_POP);
+	CMP1(E_JMP);
+	CMP1(E_JE);   CMP1(E_JNE);
+	CMP1(E_JS);   CMP1(E_JNS);
+	CMP1(E_JA);   CMP1(E_JAE);
+	CMP1(E_JB);   CMP1(E_JBE);
+	CMP1(E_JL);   CMP1(E_JLE);
+	CMP1(E_JG);   CMP1(E_JGE);
+	CMP1(E_CALL);
+	CMP1(E_NOT);  CMP1(E_NEG);
 
+	// binary
+	CMP2(E_ADD);  CMP2(E_SUB); CMP2(E_SBB); CMP2(E_MUL); CMP2(E_DIV);
+	CMP2(E_AND);  CMP2(E_OR);  CMP2(E_XOR);
+	CMP2(E_SAR);  CMP2(E_SAL); CMP2(E_SHR); CMP2(E_SHL);
+	CMP2(E_XCHG); CMP2(E_MOV); CMP2(E_LEA);
+	}
 	return 1;
 }

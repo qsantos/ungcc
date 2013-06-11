@@ -7,7 +7,7 @@
 // recursive structure
 typedef struct expr expr_t;
 
-// operand
+// register
 typedef enum
 {
 	R_IZ,                   // null pseudo-register
@@ -24,38 +24,31 @@ typedef enum
 	R_ST4, R_ST5, R_ST6, R_ST7,
 
 	N_REG,
-} reg_t;
-typedef ssize_t im_t;  // immediate value
-typedef struct         // value at address
+} rtype_t;
+typedef struct
 {
-	reg_t   base;  // base register
-	reg_t   idx;   // index register
+	rtype_t t;
+	expr_t* last; // address of last reg affectation
+} reg_t;
+// immediate value
+typedef struct
+{
+	ssize_t v;
+	char*   symbol;
+} im_t;
+// indirect addressing
+typedef struct
+{
+	rtype_t base;  // base register
+	rtype_t idx;   // index register
 	size_t  scale; // scale factor
 	ssize_t disp;  // displacement
 } addr_t;
-typedef struct
-{
-	enum op_type
-	{
-		REG,  // register
-		IM,   // immediate
-		ADDR, // address
-	} t;
-	union
-	{
-		reg_t  reg;
-		im_t   im;
-		addr_t addr;
-	} v;
-
-	char*   symbol; // associated to im value
-	expr_t* last;   // address of last reg affectation
-} operand_t;
 
 typedef enum
 {
-	// operand: register, immediate or address
-	E_OPERAND,
+	// register, immediate or address
+	E_REG, E_IM, E_ADDR,
 
 	// zeroary
 	E_NOP,  E_RET, E_HLT,
@@ -80,8 +73,10 @@ struct expr
 	etype_t type;
 	union
 	{
-		operand_t                      op;
-		char*                          fun;
+		reg_t                          reg;
+		im_t                           im;
+		addr_t                         addr;
+		char*                          fun; // TODO
 		struct {expr_t* a;           } uni;
 		struct {expr_t* a; expr_t* b;} bin;
 	} v;
@@ -103,16 +98,15 @@ expr_t* e_new();
 void    e_del(expr_t* e);
 expr_t* e_cpy(expr_t* e);
 
-// operand
-expr_t* e_op     (enum op_type t);
-expr_t* e_op_reg (reg_t reg);
-expr_t* e_op_im  (im_t im);
-expr_t* e_op_addr(reg_t base, reg_t idx, im_t scale, im_t disp);
+// register, immediate, address
+expr_t* e_reg (rtype_t reg);
+expr_t* e_im  (ssize_t im);
+expr_t* e_addr(rtype_t base, rtype_t idx, size_t scale, ssize_t disp);
 
 // zeroary
-expr_t* e_nop  ();
-expr_t* e_ret  ();
-expr_t* e_hlt  ();
+expr_t* e_nop();
+expr_t* e_ret();
+expr_t* e_hlt();
 
 // unary
 expr_t* e_push(expr_t* a); expr_t* e_pop(expr_t* a);
@@ -144,6 +138,6 @@ expr_t* e_mov (expr_t* a, expr_t* b);
 expr_t* e_lea (expr_t* a, expr_t* b);
 
 void reset_visited(expr_t* e);
-int  cmp_op       (operand_t* a, operand_t* b);
+int  cmp_expr     (expr_t* a, expr_t* b);
 
 #endif
