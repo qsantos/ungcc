@@ -65,8 +65,9 @@ static inline void blist_setdim(blist_t* l)
 			if (e->endBlck)
 				break;
 		}
-		b->w = blockScale * maxWidth;
-		b->h = blockScale * lines * glutStrokeHeight(FONT);
+		if (lines) lines--; // remove last blank line
+		b->w = blockScale * maxWidth + 2 * blockPadding;
+		b->h = blockScale * lines * glutStrokeHeight(FONT) + 2 * blockPadding;
 	}
 }
 
@@ -95,14 +96,14 @@ static void blist_display(blist_t* l)
 		int unselected = b != curBlock;
 		glColor4f(1, unselected, unselected, 1);
 
-		const double p = blockPadding;
 		glBegin(GL_LINE_LOOP);
-			glVertex2f(    -p,     -p);
-			glVertex2f(b->w+p,     -p);
-			glVertex2f(b->w+p, b->h+p);
-			glVertex2f(    -p, b->h+p);
+			glVertex2f(   0,    0);
+			glVertex2f(b->w,    0);
+			glVertex2f(b->w, b->h);
+			glVertex2f(   0, b->h);
 		glEnd();
 
+		glTranslatef(blockPadding, blockPadding, 0);
 		glScalef(blockScale, -blockScale, blockScale);
 		for (expr_t* e = b->e; e; e = e->next)
 		{
@@ -121,15 +122,15 @@ static void blist_display(blist_t* l)
 		if (b->next)
 		{
 			block_t* c = b->next;
-			glVertex2f(b->x + b->w/2, b->y + b->h + p);
-			glVertex2f(c->x + c->w/2, c->y - p);
+			glVertex2f(b->x + b->w/2, b->y + b->h);
+			glVertex2f(c->x + c->w/2, c->y);
 		}
 		if (b->branch)
 		{
 			block_t* c = b->branch;
 			glColor4f(unselected, 1, 0, 1);
-			glVertex2f(b->x + b->w/2, b->y + b->h + p);
-			glVertex2f(c->x + c->w/2, c->y - p);
+			glVertex2f(b->x + b->w/2, b->y + b->h);
+			glVertex2f(c->x + c->w/2, c->y);
 		}
 		glEnd();
 	}
@@ -242,19 +243,23 @@ static void cb_mouseFunc(int button, int state, int _x, int _y)
 		double x, y, z;
 		gluUnProject(_x, _y, 0, modelviewM, projectionM, viewport, &x, &y, &z);
 
-		// find closest block
+		// amongst the clicked blocks, find the closest one
 		double d_min = -1;
 		block_t* b_min = NULL;
 		for (size_t i = 0; i < blocks.n; i++)
 		{
 			block_t* b = blocks.b + i;;
-			double dx = x - b->x;
-			double dy = y - b->y;
-			double d = dx*dx + dy*dy;
-			if (d_min == -1 || d < d_min)
+			if (b->x <= x && x <= b->x+b->w &&
+			    b->y <= y && y <= b->y+b->h)
 			{
-				d_min = d;
-				b_min = b;
+				double dx = x - b->x;
+				double dy = y - b->y;
+				double d = dx*dx + dy*dy;
+				if (d_min == -1 || d < d_min)
+				{
+					d_min = d;
+					b_min = b;
+				}
 			}
 		}
 		curBlock = b_min;
