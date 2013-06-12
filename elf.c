@@ -87,6 +87,7 @@ size_t elf_entry(elf_t* elf)
 	return (size_t) elf->hdr.e_entry;
 }
 
+#define ADDCH(C) {if (n == a) { a*=2; ret = realloc(ret, a); } ret[n++] = C;}
 char* elf_str(elf_t* elf, size_t off)
 {
 	int         fd   = elf->fd;
@@ -94,7 +95,6 @@ char* elf_str(elf_t* elf, size_t off)
 
 	// checks that address is in .strtab
 	size_t addr = shdr->sh_addr;
-	printf("%#x, %#x -> %#x\n", addr, shdr->sh_size, off);
 	if (!(addr <= off && off < addr + shdr->sh_size))
 		return NULL;
 
@@ -102,18 +102,19 @@ char* elf_str(elf_t* elf, size_t off)
 	char*  ret = malloc(1);
 	size_t n   = 0;
 	size_t a   = 1;
-	char   c;
-	while (read(fd, &c, 1))
-	{
-		if (n == a)
-		{
-			a  *= 2;
-			ret = realloc(ret, a);
-		}
-		ret[n++] = c;
 
-		if (c == 0)
-			break;
-	}
+	ADDCH('"');
+	char c;
+	while (read(fd, &c, 1) && c)
+		switch (c)
+		{
+		case '\n': ADDCH('\\'); ADDCH('n'); break;
+		case '\r': ADDCH('\\'); ADDCH('r'); break;
+		case '\t': ADDCH('\\'); ADDCH('t'); break;
+		default:   ADDCH(c); break;
+		}
+
+	ADDCH('"');
+	ADDCH(0);
 	return ret;
 }

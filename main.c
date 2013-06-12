@@ -35,20 +35,6 @@ int main(int argc, char** argv)
 	const char* filename = argv[argn++];
 
 
-
-	// open executable
-	int input = open(filename, 0);
-	if (input < 0)
-	{
-		fprintf(stderr, "Could not open file '%s'\n\n", filename);
-		usage(name);
-	}
-
-	// read ELF information
-	elf_t* elf = elf_new();
-	elf_begin(elf, input);
-	size_t entryPoint = elf_entry(elf);
-
 	// uses objdump to get .text assembly
 	int fifo[2];
 	pipe(fifo);
@@ -62,6 +48,19 @@ int main(int argc, char** argv)
 			fprintf(stderr, "Error when converting fifo file descriptor to FILE\n");
 			exit(1);
 		}
+
+		// opens ELF file
+		int input = open(filename, 0);
+		if (input < 0)
+		{
+			fprintf(stderr, "Could not open file '%s'\n\n", filename);
+			usage(name);
+		}
+
+		// reads ELF information
+		elf_t* elf = elf_new();
+		elf_begin(elf, input);
+		size_t entryPoint = elf_entry(elf);
 
 		elist_t el; // expression list
 		elist_t fl; // function list
@@ -79,6 +78,12 @@ int main(int argc, char** argv)
 
 		elist_del(&fl);
 		elist_del(&el);
+
+		elf_del(elf);
+		close(input);
+
+		fclose(f);
+		return 0;
 	}
 	else // outputting dump
 	{
@@ -90,8 +95,4 @@ int main(int argc, char** argv)
 		fprintf(stderr, "Callind '%s' failed\n", objdump);
 		exit(1);
 	}
-
-	elf_del(elf);
-	close(input);
-	return 0;
 }
