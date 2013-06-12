@@ -4,7 +4,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "elf.h"
 #include "elist.h"
 #include "interface.h"
 
@@ -67,7 +66,7 @@ int main(int argc, char** argv)
 		elist_t el; // expression list
 		elist_t fl; // function list
 
-		read_file(&el, f);
+		read_file(&el, elf, f);
 		functions(&fl, &el, entryPoint);
 		for (size_t i = 0; i < fl.n; i++)
 		{
@@ -92,6 +91,7 @@ int main(int argc, char** argv)
 		exit(1);
 	}
 
+	elf_del(elf);
 	close(input);
 	return 0;
 }

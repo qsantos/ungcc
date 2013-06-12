@@ -45,8 +45,10 @@ eopair_t* elist_at(elist_t* l, size_t o)
 	return bsearch(&key, l->e, l->n, sizeof(eopair_t), cmp_eopair);
 }
 
-char* read_register(rtype_t* dst, size_t* sz, char* str)
+char* read_register(rtype_t* dst, size_t* sz, elf_t* elf, char* str)
 {
+	(void) elf;
+
 	// register size
 	if (sz)
 	{
@@ -89,20 +91,20 @@ char* read_register(rtype_t* dst, size_t* sz, char* str)
 	return str+2;
 }
 
-char* read_operand(expr_t** dst, size_t* sz, char* str)
+char* read_operand(expr_t** dst, size_t* sz, elf_t* elf, char* str)
 {
 	if (str[0] == '%') // register
 	{
 		rtype_t reg;
-		str = read_register(&reg, sz, str+1);
+		str = read_register(&reg, sz, elf, str+1);
 		*dst = e_reg(reg);
-
 		return str;
 	}
 	else if (str[0] == '$') // immediate
 	{
 		size_t im = strtoul(str+1, (char**) &str, 16);
 		*dst = e_im(im);
+		(*dst)->v.im.symbol = elf_str(elf, im);
 		return str;
 	}
 	else if ('0' <= str[0] && str[0] <= '9' && str[1] != 'x') // immediate address
@@ -129,7 +131,7 @@ char* read_operand(expr_t** dst, size_t* sz, char* str)
 	if (str[0] == '%')
 	{
 		rtype_t base = 0;
-		str = read_register(&base, NULL, str+1);
+		str = read_register(&base, NULL, elf, str+1);
 		*dst = e_addr(base, 0, 0, 0);
 		return str;
 	}
@@ -145,7 +147,7 @@ char* read_operand(expr_t** dst, size_t* sz, char* str)
 
 	rtype_t base = 0;
 	if (str[0] == '%')
-		str = read_register(&base, NULL, str+1);
+		str = read_register(&base, NULL, elf, str+1);
 
 	if (str[0] != ',')
 	{
@@ -155,7 +157,7 @@ char* read_operand(expr_t** dst, size_t* sz, char* str)
 	str++;
 
 	rtype_t idx;
-	str = read_register(&idx, NULL, str+1);
+	str = read_register(&idx, NULL, elf, str+1);
 	str++; // ','
 	size_t scale = strtoul(str, (char**) &str, 10);
 
@@ -175,7 +177,7 @@ char* read_operand(expr_t** dst, size_t* sz, char* str)
 #define BIN_F(N,T) if(strcmp(opcode,N)==0||strcmp(opcode,N"l")==0||strcmp(opcode,N"b")==0)\
 	{elist_push(dst,of,e_mov(e_cpy(b),T(b,a))); return;}
 
-void read_instr(elist_t* dst, size_t of, char* str)
+void read_instr(elist_t* dst, size_t of, elf_t* elf, char* str)
 {
 	const char* opcode = str;
 	while (*str && *str != ' ') str++; // skip the opcode
@@ -200,7 +202,7 @@ void read_instr(elist_t* dst, size_t of, char* str)
 
 	if (!str) return;
 	expr_t* a = NULL;
-	str = read_operand(&a, NULL, str)+1;
+	str = read_operand(&a, NULL, elf, str)+1;
 
 	// unary
 	UNI("push", e_push) UNI("pop", e_pop)
@@ -223,7 +225,7 @@ void read_instr(elist_t* dst, size_t of, char* str)
 
 	if (!str) return;
 	expr_t* b = NULL;
-	read_operand(&b, 0, str);
+	read_operand(&b, 0, elf, str);
 
 	// binary
 	if (strcmp(opcode, "test") == 0)
@@ -247,7 +249,7 @@ void read_instr(elist_t* dst, size_t of, char* str)
 	elist_push(dst, of, e_unk(strdup(opcode)));
 }
 
-void read_file(elist_t* dst, FILE* f)
+void read_file(elist_t* dst, elf_t* elf, FILE* f)
 {
 	elist_new(dst);
 
@@ -287,7 +289,7 @@ void read_file(elist_t* dst, FILE* f)
 		if (!part) continue;
 
 		size_t cur = dst->n;
-		read_instr(dst, offset, part);
+		read_instr(dst, offset, elf, part);
 		// adds label to first added instruction
 		if (cur < dst->n)
 		{
