@@ -513,8 +513,43 @@ static void postproc_aux1(expr_t* e)
 	POST2(E_ADD);  POST2(E_SUB); POST2(E_SBB); POST2(E_MUL); POST2(E_DIV);
 	POST2(E_OR);
 	POST2(E_SAR);  POST2(E_SAL); POST2(E_SHR); POST2(E_SHL);
-	POST2(E_XCHG); POST2(E_MOV); POST2(E_LEA);
+	POST2(E_XCHG); POST2(E_MOV);
 
+	case E_LEA:
+	{
+		expr_t* a = e->v.bin.a; postproc_aux1(a);
+		expr_t* b = e->v.bin.b; postproc_aux1(b);
+		if (b->type == E_ADDR && b->v.addr.disp == 0)
+		{
+			rtype_t base  = b->v.addr.base;
+			rtype_t idx   = b->v.addr.idx;
+			size_t  scale = b->v.addr.scale;
+
+			e->type = E_MOV;
+			if (idx != R_IZ)
+			{
+				expr_t* e = e_reg(idx);
+				if (scale != 1)    e = e_mul(e_im(scale), e);
+				if (base  != R_IZ) e = e_add(e_reg(base), e);
+				e->v.bin.b = e;
+			}
+			else if (base != R_IZ)
+			{
+				if (a->type == E_REG && a->v.reg.t == base)
+				{
+					e->type = E_NOP;
+					e_del(a, false);
+				}
+				else
+					e->v.bin.b = e_reg(base);
+			}
+			else
+				e->v.bin.b = e_im(0);
+
+			e_del(b, false);
+		}
+		break;
+	}
 	case E_AND:
 	{
 		expr_t* a = e->v.bin.a; postproc_aux1(a);

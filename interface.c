@@ -42,8 +42,8 @@ static size_t countChars(const char* str, char c)
 	return ret;
 }
 
-#define BUFSIZE   1024
-#define FONT      GLUT_STROKE_MONO_ROMAN
+#define BUFSIZE 1024
+#define FONT    GLUT_STROKE_MONO_ROMAN
 static inline void blist_setdim(blist_t* l)
 {
 	for (size_t i = 0; i < l->n; i++)
