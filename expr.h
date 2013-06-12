@@ -44,6 +44,17 @@ typedef struct
 	size_t  scale; // scale factor
 	ssize_t disp;  // displacement
 } addr_t;
+// unary
+typedef struct
+{
+	expr_t* a;
+} uni_t;
+// binary
+typedef struct
+{
+	expr_t* a;
+	expr_t* b;
+} bin_t;
 
 typedef enum
 {
@@ -76,12 +87,12 @@ struct expr
 	etype_t type;
 	union
 	{
-		char*                          unk;
-		reg_t                          reg;
-		im_t                           im;
-		addr_t                         addr;
-		struct {expr_t* a;           } uni;
-		struct {expr_t* a; expr_t* b;} bin;
+		char*  unk;
+		reg_t  reg;
+		im_t   im;
+		addr_t addr;
+		uni_t  uni;
+		bin_t  bin;
 	} v;
 	char* label;
 
