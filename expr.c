@@ -45,8 +45,6 @@ void e_del(expr_t* e, bool keep)
 	case E_JS:   case E_JNS:
 	case E_JA:   case E_JAE:
 	case E_JB:   case E_JBE:
-	case E_JL:   case E_JLE:
-	case E_JG:   case E_JGE:
 	case E_CALL:
 	case E_NOT:  case E_NEG:
 		e_del(e->v.uni.a, false);
@@ -59,6 +57,10 @@ void e_del(expr_t* e, bool keep)
 	case E_XCHG: case E_MOV: case E_LEA:
 		e_del(e->v.bin.a, false);
 		e_del(e->v.bin.b, false);
+		break;
+	
+	case E_TEST:
+		e_del(e->v.test.a, false);
 		break;
 	}
 	
@@ -102,8 +104,6 @@ expr_t* e_cpy(expr_t* e)
 	case E_JS:   case E_JNS:
 	case E_JA:   case E_JAE:
 	case E_JB:   case E_JBE:
-	case E_JL:   case E_JLE:
-	case E_JG:   case E_JGE:
 	case E_CALL:
 	case E_NOT:  case E_NEG:
 		ret->v.uni.a = e_cpy(e->v.uni.a);
@@ -117,6 +117,10 @@ expr_t* e_cpy(expr_t* e)
 		ret->v.bin.a = e_cpy(e->v.bin.a);
 		ret->v.bin.b = e_cpy(e->v.bin.b);
 		break;
+	
+	case E_TEST:
+		ret->v.test.t = e->v.test.t;
+		ret->v.test.a = e_cpy(e->v.test.a);
 	}
 	return ret;
 }
@@ -186,8 +190,6 @@ E_UNI(je  , E_JE  ) E_UNI(jne, E_JNE)
 E_UNI(js  , E_JS  ) E_UNI(jns, E_JNS)
 E_UNI(ja  , E_JA  ) E_UNI(jae, E_JAE)
 E_UNI(jb  , E_JB  ) E_UNI(jbe, E_JBE)
-E_UNI(jl  , E_JL  ) E_UNI(jle, E_JLE)
-E_UNI(jg  , E_JG  ) E_UNI(jge, E_JGE)
 E_UNI(call, E_CALL)
 E_UNI(not , E_NOT ) E_UNI(neg, E_NEG)
 
@@ -204,6 +206,15 @@ E_BIN(add , E_ADD ) E_BIN(sub, E_SUB) E_BIN(sbb, E_SBB) E_BIN(mul, E_MUL) E_BIN(
 E_BIN(and , E_AND ) E_BIN(or , E_OR ) E_BIN(xor, E_XOR)
 E_BIN(sar , E_SAR ) E_BIN(sal, E_SAL) E_BIN(shr, E_SHR) E_BIN(shl, E_SHL)
 E_BIN(xchg, E_XCHG) E_BIN(mov, E_MOV) E_BIN(lea, E_LEA)
+
+expr_t* e_test(ttype_t t, expr_t* a)
+{
+	expr_t* ret = e_new();
+	ret->type = E_TEST;
+	ret->v.test.t = t;
+	ret->v.test.a = a;
+	return ret;
+}
 
 void reset_visited(expr_t* e)
 {
@@ -249,8 +260,6 @@ int cmp_expr(expr_t* a, expr_t* b)
 	CMP1(E_JS);   CMP1(E_JNS);
 	CMP1(E_JA);   CMP1(E_JAE);
 	CMP1(E_JB);   CMP1(E_JBE);
-	CMP1(E_JL);   CMP1(E_JLE);
-	CMP1(E_JG);   CMP1(E_JGE);
 	CMP1(E_CALL);
 	CMP1(E_NOT);  CMP1(E_NEG);
 
@@ -259,6 +268,9 @@ int cmp_expr(expr_t* a, expr_t* b)
 	CMP2(E_AND);  CMP2(E_OR);  CMP2(E_XOR);
 	CMP2(E_SAR);  CMP2(E_SAL); CMP2(E_SHR); CMP2(E_SHL);
 	CMP2(E_XCHG); CMP2(E_MOV); CMP2(E_LEA);
+
+	case E_TEST:
+		return a->v.test.t == b->v.test.t ? cmp_expr(a->v.test.a, b->v.test.a) : 0;
 	}
 	return 1;
 }

@@ -193,8 +193,6 @@ For reminder, the context looks like:
 	PRINT_EXPR1(E_JS,   "js");   PRINT_EXPR1(E_JNS, "jns");
 	PRINT_EXPR1(E_JA,   "ja");   PRINT_EXPR1(E_JAE, "jae");
 	PRINT_EXPR1(E_JB,   "jb");   PRINT_EXPR1(E_JBE, "jbe");
-	PRINT_EXPR1(E_JL,   "jl");   PRINT_EXPR1(E_JLE, "jle");
-	PRINT_EXPR1(E_JG,   "jg");   PRINT_EXPR1(E_JGE, "jge");
 	PRINT_EXPR1(E_NOT,  "!");    PRINT_EXPR1(E_NEG, "~");
 
 	case E_JMP:
@@ -229,6 +227,22 @@ For reminder, the context looks like:
 	PRINT_EXPR2(E_XCHG, "↔");
 	PRINT_EXPR2(E_MOV,  "=");
 	PRINT_EXPR2(E_LEA,  "=&");
+
+	case E_TEST:
+		PRTCHK(print_expr, e->v.test.a);
+		switch (e->v.test.t)
+		{
+		case T_E:  PRTCHK(snprintf, " == 0");  break;
+		case T_NE: PRTCHK(snprintf, " != 0");  break;
+		case T_S:  PRTCHK(snprintf, " <=_ 0"); break;
+		case T_NS: PRTCHK(snprintf, " >=_ 0"); break;
+		case T_A:  PRTCHK(snprintf, " > 0");   break;
+		case T_AE: PRTCHK(snprintf, " >= 0");  break;
+		case T_B:  PRTCHK(snprintf, " < 0");   break;
+		case T_BE: PRTCHK(snprintf, " <= 0");  break;
+		}
+		break;
+
 	default:
 		PRTCHK(snprintf, "Unknown %zu\n", e->type);
 	}

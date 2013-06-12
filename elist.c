@@ -211,8 +211,6 @@ void read_instr(elist_t* dst, size_t of, elf_t* elf, char* str)
 	UNI("js"  , e_js  ) UNI("jns", e_jns)
 	UNI("ja"  , e_ja  ) UNI("jae", e_jae)
 	UNI("jb"  , e_jb  ) UNI("jbe", e_jbe)
-	UNI("jl"  , e_jl  ) UNI("jle", e_jle)
-	UNI("jg"  , e_jg  ) UNI("jge", e_jge)
 
 	if (strcmp(opcode, "call") == 0)
 	{
@@ -313,7 +311,7 @@ void functions(elist_t* dst, elist_t* l, size_t entryPoint)
 		else if (i+1 < l->n)
 			e->next = l->e[i+1].e;
 
-		if (!(E_JMP <= e->type && e->type <= E_JGE)) // any jump
+		if (!(E_JMP <= e->type && e->type <= E_JBE)) // any jump
 			continue;
 
 		expr_t* a = e->v.uni.a;
@@ -504,8 +502,6 @@ static void postproc_aux1(expr_t* e)
 	POST1(E_JS);   POST1(E_JNS);
 	POST1(E_JA);   POST1(E_JAE);
 	POST1(E_JB);   POST1(E_JBE);
-	POST1(E_JL);   POST1(E_JLE);
-	POST1(E_JG);   POST1(E_JGE);
 	POST1(E_CALL);
 	POST1(E_NOT);  POST1(E_NEG);
 
@@ -515,6 +511,32 @@ static void postproc_aux1(expr_t* e)
 	POST2(E_SAR);  POST2(E_SAL); POST2(E_SHR); POST2(E_SHL);
 	POST2(E_XCHG); POST2(E_MOV);
 
+	case E_AND:
+	{
+		expr_t* a = e->v.bin.a; postproc_aux1(a);
+		expr_t* b = e->v.bin.b; postproc_aux1(b);
+		if (cmp_expr(a, b) == 0)
+		{
+			free(e->label);
+			e_del(b, false);
+			memcpy(e, a, sizeof(expr_t));
+		}
+		break;
+	}
+	case E_XOR:
+	{
+		expr_t* a = e->v.bin.a; postproc_aux1(a);
+		expr_t* b = e->v.bin.b; postproc_aux1(b);
+		if (cmp_expr(a, b) == 0)
+		{
+			e->type = E_IM;
+			e->v.im.v = 0;
+			e->v.im.symbol = NULL;
+			e_del(a, false);
+			e_del(b, false);
+		}
+		break;
+	}
 	case E_LEA:
 	{
 		expr_t* a = e->v.bin.a; postproc_aux1(a);
@@ -550,32 +572,10 @@ static void postproc_aux1(expr_t* e)
 		}
 		break;
 	}
-	case E_AND:
-	{
-		expr_t* a = e->v.bin.a; postproc_aux1(a);
-		expr_t* b = e->v.bin.b; postproc_aux1(b);
-		if (cmp_expr(a, b) == 0)
-		{
-			free(e->label);
-			e_del(b, false);
-			memcpy(e, a, sizeof(expr_t));
-		}
+
+	case E_TEST:
+		postproc_aux1(e->v.test.a);
 		break;
-	}
-	case E_XOR:
-	{
-		expr_t* a = e->v.bin.a; postproc_aux1(a);
-		expr_t* b = e->v.bin.b; postproc_aux1(b);
-		if (cmp_expr(a, b) == 0)
-		{
-			e->type = E_IM;
-			e->v.im.v = 0;
-			e->v.im.symbol = NULL;
-			e_del(a, false);
-			e_del(b, false);
-		}
-		break;
-	}
 
 	default:
 		break;
@@ -625,8 +625,6 @@ static void reduc_aux1(expr_t* r, expr_t* e, expr_t** last)
 	REDUC1(E_JS);   REDUC1(E_JNS);
 	REDUC1(E_JA);   REDUC1(E_JAE);
 	REDUC1(E_JB);   REDUC1(E_JBE);
-	REDUC1(E_JL);   REDUC1(E_JLE);
-	REDUC1(E_JG);   REDUC1(E_JGE);
 	REDUC1(E_CALL);
 	REDUC1(E_NOT);  REDUC1(E_NEG);
 
@@ -638,6 +636,10 @@ static void reduc_aux1(expr_t* r, expr_t* e, expr_t** last)
 	case E_MOV:
 	case E_LEA:
 		reduc_aux1(r, e->v.bin.b, last);
+		break;
+
+	case E_TEST:
+		reduc_aux1(r, e->v.test.a, last);
 		break;
 
 	default:

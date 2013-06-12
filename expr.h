@@ -55,6 +55,17 @@ typedef struct
 	expr_t* a;
 	expr_t* b;
 } bin_t;
+// comparison test
+typedef enum
+{
+	T_E, T_S, T_A, T_B,
+	T_NE,T_NS,T_AE,T_BE,
+} ttype_t;
+typedef struct
+{
+	ttype_t t;
+	expr_t* a;
+} test_t;
 
 typedef enum
 {
@@ -68,18 +79,20 @@ typedef enum
 	E_NOP,  E_RET, E_HLT,
 
 	// unary
-	E_PUSH, E_POP,                       // statments
-	E_JMP,                               // inconditionnal jump
-	E_JE, E_JS, E_JA, E_JB, E_JL, E_JG,  // test statments
-	E_JNE,E_JNS,E_JAE,E_JBE,E_JLE,E_JGE, // test statments
-	E_CALL,                              // function call
-	E_NOT,  E_NEG,                       // expressions
+	E_PUSH, E_POP,           // statments
+	E_JMP,                   // inconditionnal jump
+	E_JE, E_JS, E_JA, E_JB,  // test statments
+	E_JNE,E_JNS,E_JAE,E_JBE, // test statments
+	E_CALL,                  // function call
+	E_NOT,  E_NEG,           // expressions
 
 	// binary
 	E_ADD,  E_SUB, E_SBB, E_MUL, E_DIV, // mathematic operators
 	E_AND,  E_OR,  E_XOR,               // logic operators
 	E_SAR,  E_SAL, E_SHR, E_SHL,        // shifting operators
 	E_XCHG, E_MOV, E_LEA,               // affectation
+
+	E_TEST,
 } etype_t;
 
 struct expr
@@ -93,6 +106,7 @@ struct expr
 		addr_t addr;
 		uni_t  uni;
 		bin_t  bin;
+		test_t test;
 	} v;
 	char* label;
 
@@ -131,9 +145,7 @@ expr_t* e_je  (expr_t* a); expr_t* e_jne(expr_t* a);
 expr_t* e_js  (expr_t* a); expr_t* e_jns(expr_t* a);
 expr_t* e_ja  (expr_t* a); expr_t* e_jae(expr_t* a);
 expr_t* e_jb  (expr_t* a); expr_t* e_jbe(expr_t* a);
-expr_t* e_jl  (expr_t* a); expr_t* e_jle(expr_t* a);
 expr_t* e_call(expr_t* a);
-expr_t* e_jg  (expr_t* a); expr_t* e_jge(expr_t* a);
 expr_t* e_not (expr_t* a); expr_t* e_neg(expr_t* b);
 
 // binary
@@ -152,6 +164,8 @@ expr_t* e_shl (expr_t* a, expr_t* b);
 expr_t* e_xchg(expr_t* a, expr_t* b);
 expr_t* e_mov (expr_t* a, expr_t* b);
 expr_t* e_lea (expr_t* a, expr_t* b);
+
+expr_t* e_test(ttype_t t, expr_t* a);
 
 void reset_visited(expr_t* e);
 int  cmp_expr     (expr_t* a, expr_t* b);
