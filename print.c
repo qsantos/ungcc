@@ -189,22 +189,7 @@ For reminder, the context looks like:
 
 	// unary
 	PRINT_EXPR1(E_PUSH, "push"); PRINT_EXPR1(E_POP, "pop");
-	PRINT_EXPR1(E_JE,   "je");   PRINT_EXPR1(E_JNE, "jne");
-	PRINT_EXPR1(E_JS,   "js");   PRINT_EXPR1(E_JNS, "jns");
-	PRINT_EXPR1(E_JA,   "ja");   PRINT_EXPR1(E_JAE, "jae");
-	PRINT_EXPR1(E_JB,   "jb");   PRINT_EXPR1(E_JBE, "jbe");
 	PRINT_EXPR1(E_NOT,  "!");    PRINT_EXPR1(E_NEG, "~");
-
-	case E_JMP:
-		if (e->branch && e->branch->isFun)
-			PRTCHK(snprintf, "-> %s()", e->branch->label)
-		else
-		{
-			expr_t* a = e->v.uni.a;
-			if (a->type == E_IM && a->v.im.symbol)
-				PRTCHK(snprintf, "-> %s()", a->v.im.symbol)
-		}
-		break;
 
 	case E_CALL:
 		PRTCHK(print_expr, e->v.bin.a);
@@ -212,6 +197,23 @@ For reminder, the context looks like:
 		break;
 
 	// binary
+	case E_JXX:
+		PRTCHK(snprintf, "if (");
+		PRTCHK(print_expr, e->v.bin.b);
+		PRTCHK(snprintf, ")");
+		break;
+
+	case E_JMP:
+		if (e->branch && e->branch->isFun)
+			PRTCHK(snprintf, "-> %s()", e->branch->label)
+		else
+		{
+			expr_t* a = e->v.bin.a;
+			if (a->type == E_IM && a->v.im.symbol)
+				PRTCHK(snprintf, "-> %s()", a->v.im.symbol)
+		}
+		break;
+
 	PRINT_EXPR2(E_ADD,  "+");
 	PRINT_EXPR2(E_SUB,  "-");
 	PRINT_EXPR2(E_SBB,  "-'"); // TODO

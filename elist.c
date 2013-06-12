@@ -172,6 +172,9 @@ char* read_operand(expr_t** dst, size_t* sz, elf_t* elf, char* str)
 #define BIN(N,T) if(strcmp(opcode,N)==0||strcmp(opcode,N"l")==0||strcmp(opcode,N"b")==0)\
 	{elist_push(dst,of,T(b,a));return;}
 
+#define JXX(N,T) if(strcmp(opcode,N)==0)\
+	{elist_push(dst,of,e_jxx(a, e_test(T, e_reg(R_FL))));return;}
+
 #define UNI_F(N,T) if(strcmp(opcode,N)==0||strcmp(opcode,N"l")==0||strcmp(opcode,N"b")==0)\
 	{elist_push(dst,of,e_mov(e_cpy(a),T(a)));   return;}
 #define BIN_F(N,T) if(strcmp(opcode,N)==0||strcmp(opcode,N"l")==0||strcmp(opcode,N"b")==0)\
@@ -207,10 +210,11 @@ void read_instr(elist_t* dst, size_t of, elf_t* elf, char* str)
 	// unary
 	UNI("push", e_push) UNI("pop", e_pop)
 	UNI("jmp" , e_jmp )
-	UNI("je"  , e_je  ) UNI("jne", e_jne)
-	UNI("js"  , e_js  ) UNI("jns", e_jns)
-	UNI("ja"  , e_ja  ) UNI("jae", e_jae)
-	UNI("jb"  , e_jb  ) UNI("jbe", e_jbe)
+
+	JXX("je", T_E) JXX("jne", T_NE)
+	JXX("js", T_S) JXX("jns", T_NS)
+	JXX("ja", T_A) JXX("jae", T_AE)
+	JXX("jb", T_B) JXX("jbe", T_BE)
 
 	if (strcmp(opcode, "call") == 0)
 	{
@@ -311,10 +315,10 @@ void functions(elist_t* dst, elist_t* l, size_t entryPoint)
 		else if (i+1 < l->n)
 			e->next = l->e[i+1].e;
 
-		if (!(E_JMP <= e->type && e->type <= E_JBE)) // any jump
+		if (e->type != E_JMP && e->type != E_JXX)
 			continue;
 
-		expr_t* a = e->v.uni.a;
+		expr_t* a = e->v.bin.a;
 		if (a->type != E_IM)
 		{
 			fprintf(stderr, "Unsupported instruction at %#x: ", l->e[i].o);
@@ -493,19 +497,17 @@ void stripcontext(expr_t* e)
 
 static void postproc_aux1(expr_t* e)
 {
+	if (e == NULL) return;
+
 	switch (e->type)
 	{
 	// unary
 	POST1(E_PUSH); POST1(E_POP);
-	POST1(E_JMP);
-	POST1(E_JE);   POST1(E_JNE);
-	POST1(E_JS);   POST1(E_JNS);
-	POST1(E_JA);   POST1(E_JAE);
-	POST1(E_JB);   POST1(E_JBE);
 	POST1(E_CALL);
 	POST1(E_NOT);  POST1(E_NEG);
 
 	// binary
+	POST2(E_JMP);  POST2(E_JXX);
 	POST2(E_ADD);  POST2(E_SUB); POST2(E_SBB); POST2(E_MUL); POST2(E_DIV);
 	POST2(E_OR);
 	POST2(E_SAR);  POST2(E_SAL); POST2(E_SHR); POST2(E_SHL);
@@ -603,6 +605,8 @@ void postproc(expr_t* e)
 
 static void reduc_aux1(expr_t* r, expr_t* e, expr_t** last)
 {
+	if (e == NULL) return;
+
 	switch (e->type)
 	{
 	case E_REG:
@@ -620,18 +624,14 @@ static void reduc_aux1(expr_t* r, expr_t* e, expr_t** last)
 
 	// unary
 	REDUC1(E_PUSH); REDUC1(E_POP);
-	REDUC1(E_JMP);
-	REDUC1(E_JE);   REDUC1(E_JNE);
-	REDUC1(E_JS);   REDUC1(E_JNS);
-	REDUC1(E_JA);   REDUC1(E_JAE);
-	REDUC1(E_JB);   REDUC1(E_JBE);
 	REDUC1(E_CALL);
 	REDUC1(E_NOT);  REDUC1(E_NEG);
 
 	// binary
-	REDUC2(E_ADD);  REDUC2(E_SUB); REDUC2(E_SBB); REDUC2(E_MUL); REDUC2(E_DIV);
-	REDUC2(E_AND);  REDUC2(E_OR);  REDUC2(E_XOR);
-	REDUC2(E_SAR);  REDUC2(E_SAL); REDUC2(E_SHR); REDUC2(E_SHL);
+	REDUC2(E_JMP); REDUC2(E_JXX);
+	REDUC2(E_ADD); REDUC2(E_SUB); REDUC2(E_SBB); REDUC2(E_MUL); REDUC2(E_DIV);
+	REDUC2(E_AND); REDUC2(E_OR);  REDUC2(E_XOR);
+	REDUC2(E_SAR); REDUC2(E_SAL); REDUC2(E_SHR); REDUC2(E_SHL);
 
 	case E_MOV:
 	case E_LEA:

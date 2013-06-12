@@ -18,6 +18,8 @@ expr_t* e_new()
 
 void e_del(expr_t* e, bool keep)
 {
+	if (e == NULL) return;
+
 	switch (e->type)
 	{
 	case E_UNK:
@@ -40,17 +42,13 @@ void e_del(expr_t* e, bool keep)
 
 	// unary
 	case E_PUSH: case E_POP:
-	case E_JMP:
-	case E_JE:   case E_JNE:
-	case E_JS:   case E_JNS:
-	case E_JA:   case E_JAE:
-	case E_JB:   case E_JBE:
 	case E_CALL:
 	case E_NOT:  case E_NEG:
 		e_del(e->v.uni.a, false);
 		break;
 
 	// binary
+	case E_JMP:  case E_JXX:
 	case E_ADD:  case E_SUB: case E_SBB: case E_MUL: case E_DIV:
 	case E_AND:  case E_OR:  case E_XOR:
 	case E_SAR:  case E_SAL: case E_SHR: case E_SHL:
@@ -70,6 +68,8 @@ void e_del(expr_t* e, bool keep)
 
 expr_t* e_cpy(expr_t* e)
 {
+	if (e == NULL) return NULL;
+
 	expr_t* ret = e_new();
 	ret->type = e->type;
 	switch (e->type)
@@ -99,17 +99,13 @@ expr_t* e_cpy(expr_t* e)
 
 	// unary
 	case E_PUSH: case E_POP:
-	case E_JMP:
-	case E_JE:   case E_JNE:
-	case E_JS:   case E_JNS:
-	case E_JA:   case E_JAE:
-	case E_JB:   case E_JBE:
 	case E_CALL:
 	case E_NOT:  case E_NEG:
 		ret->v.uni.a = e_cpy(e->v.uni.a);
 		break;
 
 	// binary
+	case E_JMP:  case E_JXX:
 	case E_ADD:  case E_SUB: case E_SBB: case E_MUL: case E_DIV:
 	case E_AND:  case E_OR:  case E_XOR:
 	case E_SAR:  case E_SAL: case E_SHR: case E_SHL:
@@ -185,15 +181,19 @@ E_ZER(hlt, E_HLT)
 	return ret; \
 }
 E_UNI(push, E_PUSH) E_UNI(pop, E_POP)
-E_UNI(jmp , E_JMP )
-E_UNI(je  , E_JE  ) E_UNI(jne, E_JNE)
-E_UNI(js  , E_JS  ) E_UNI(jns, E_JNS)
-E_UNI(ja  , E_JA  ) E_UNI(jae, E_JAE)
-E_UNI(jb  , E_JB  ) E_UNI(jbe, E_JBE)
 E_UNI(call, E_CALL)
 E_UNI(not , E_NOT ) E_UNI(neg, E_NEG)
 
 // binary
+expr_t* e_jmp(expr_t* a)
+{
+	expr_t* ret = e_new();
+	ret->type = E_JMP;
+	ret->v.bin.a = a;
+	ret->v.bin.b = NULL;
+	return ret;
+}
+
 #define E_BIN(N, T) expr_t* e_##N(expr_t* a, expr_t* b) \
 { \
 	expr_t* ret = e_new(); \
@@ -202,6 +202,7 @@ E_UNI(not , E_NOT ) E_UNI(neg, E_NEG)
 	ret->v.bin.b = b; \
 	return ret; \
 }
+E_BIN(jxx , E_JXX )
 E_BIN(add , E_ADD ) E_BIN(sub, E_SUB) E_BIN(sbb, E_SBB) E_BIN(mul, E_MUL) E_BIN(div, E_DIV)
 E_BIN(and , E_AND ) E_BIN(or , E_OR ) E_BIN(xor, E_XOR)
 E_BIN(sar , E_SAR ) E_BIN(sal, E_SAL) E_BIN(shr, E_SHR) E_BIN(shl, E_SHL)
@@ -231,6 +232,9 @@ void reset_visited(expr_t* e)
 
 int cmp_expr(expr_t* a, expr_t* b)
 {
+	if (a == NULL && b == NULL) return 0;
+	if (a == NULL || b == NULL) return 1;
+
 	if (a->type != b->type)
 		return 1;
 	switch (a->type)
@@ -255,15 +259,11 @@ int cmp_expr(expr_t* a, expr_t* b)
 		return 0;
 	// unary
 	CMP1(E_PUSH); CMP1(E_POP);
-	CMP1(E_JMP);
-	CMP1(E_JE);   CMP1(E_JNE);
-	CMP1(E_JS);   CMP1(E_JNS);
-	CMP1(E_JA);   CMP1(E_JAE);
-	CMP1(E_JB);   CMP1(E_JBE);
 	CMP1(E_CALL);
 	CMP1(E_NOT);  CMP1(E_NEG);
 
 	// binary
+	CMP2(E_JMP);  CMP2(E_JXX);
 	CMP2(E_ADD);  CMP2(E_SUB); CMP2(E_SBB); CMP2(E_MUL); CMP2(E_DIV);
 	CMP2(E_AND);  CMP2(E_OR);  CMP2(E_XOR);
 	CMP2(E_SAR);  CMP2(E_SAL); CMP2(E_SHR); CMP2(E_SHL);

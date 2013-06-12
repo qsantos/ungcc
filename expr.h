@@ -80,13 +80,11 @@ typedef enum
 
 	// unary
 	E_PUSH, E_POP,           // statments
-	E_JMP,                   // inconditionnal jump
-	E_JE, E_JS, E_JA, E_JB,  // test statments
-	E_JNE,E_JNS,E_JAE,E_JBE, // test statments
 	E_CALL,                  // function call
 	E_NOT,  E_NEG,           // expressions
 
 	// binary
+	E_JMP,  E_JXX,                      // jumps (JMP ignores 'b')
 	E_ADD,  E_SUB, E_SBB, E_MUL, E_DIV, // mathematic operators
 	E_AND,  E_OR,  E_XOR,               // logic operators
 	E_SAR,  E_SAL, E_SHR, E_SHL,        // shifting operators
@@ -140,7 +138,6 @@ expr_t* e_hlt();
 
 // unary
 expr_t* e_push(expr_t* a); expr_t* e_pop(expr_t* a);
-expr_t* e_jmp (expr_t* a);
 expr_t* e_je  (expr_t* a); expr_t* e_jne(expr_t* a);
 expr_t* e_js  (expr_t* a); expr_t* e_jns(expr_t* a);
 expr_t* e_ja  (expr_t* a); expr_t* e_jae(expr_t* a);
@@ -149,6 +146,8 @@ expr_t* e_call(expr_t* a);
 expr_t* e_not (expr_t* a); expr_t* e_neg(expr_t* b);
 
 // binary
+expr_t* e_jmp (expr_t* a); // b = NULL
+expr_t* e_jxx (expr_t* a, expr_t* b);
 expr_t* e_add (expr_t* a, expr_t* b);
 expr_t* e_sub (expr_t* a, expr_t* b);
 expr_t* e_sbb (expr_t* a, expr_t* b);
