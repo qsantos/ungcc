@@ -13,7 +13,12 @@ struct elf
 {
 	int fd;
 	Elf32_Ehdr hdr;  // ELF header
-	Elf32_Shdr shdr; // section header (should be .strtab)
+
+	// some section headers
+	Elf32_Shdr rodata;
+	Elf32_Shdr dynstr;
+	Elf32_Shdr dynsym;
+	Elf32_Shdr rel_plt;
 };
 
 elf_t* elf_new()
@@ -56,29 +61,30 @@ void elf_begin(elf_t* elf, int fd)
 	if (hdr->e_shstrndx == SHN_UNDEF)
 		ERR("The ELF file has no .shstrtab (string) section\n");
 
-	Elf32_Shdr* shdr = &elf->shdr;
+	Elf32_Shdr shdr;
 
 	// gets the .shstrtab section
 	lseek(fd, hdr->e_shoff + hdr->e_shstrndx * sizeof(Elf32_Shdr), SEEK_SET);
-	read(fd, shdr, sizeof(Elf32_Shdr));
-	Elf32_Off strtaboff = shdr->sh_offset;
+	read(fd, &shdr, sizeof(Elf32_Shdr));
+	Elf32_Off strtaboff = shdr.sh_offset;
 
 	// finds the .strtab section
 	for (Elf32_Half i = 0; i < hdr->e_shnum; i++)
 	{
 		// reads section header
 		lseek(fd, hdr->e_shoff + i * sizeof(Elf32_Shdr), SEEK_SET);
-		read(fd, shdr, sizeof(Elf32_Shdr));
+		read(fd, &shdr, sizeof(Elf32_Shdr));
 
-		// check if name is ".rodata"
-		const char* sectname = ".rodata";
-		lseek(fd, strtaboff + shdr->sh_name, SEEK_SET);
-		size_t n = strlen(sectname);
-		char buf[n+1];
-		read(fd, buf, n+1);
+		// read name (expecting .rodata, .dynstr, .dynsym or .rel.plt)
+		lseek(fd, strtaboff + shdr.sh_name, SEEK_SET);
+		char buf[9];
+		read(fd, buf, 9);
 
-		if (strcmp(buf, sectname) == 0)
-			break;
+		// save in appropriate member
+		if (strcmp(buf, ".rodata" ) == 0) memcpy(&elf->rodata,  &shdr, sizeof(Elf32_Shdr));
+		if (strcmp(buf, ".dynstr" ) == 0) memcpy(&elf->dynstr,  &shdr, sizeof(Elf32_Shdr));
+		if (strcmp(buf, ".dynsym" ) == 0) memcpy(&elf->dynsym,  &shdr, sizeof(Elf32_Shdr));
+		if (strcmp(buf, ".rel.plt") == 0) memcpy(&elf->rel_plt, &shdr, sizeof(Elf32_Shdr));
 	}
 }
 
@@ -91,7 +97,7 @@ size_t elf_entry(elf_t* elf)
 char* elf_str(elf_t* elf, size_t off)
 {
 	int         fd   = elf->fd;
-	Elf32_Shdr* shdr = &elf->shdr;
+	Elf32_Shdr* shdr = &elf->rodata;
 
 	// checks that address is in .strtab
 	size_t addr = shdr->sh_addr;
