@@ -199,12 +199,10 @@ static void cb_keyboardFunc(unsigned char key, int x, int y)
 	(void) x;
 	(void) y;
 
-	switch (key)
+	if (key == 'r')
 	{
-	case 'r':
 		blist_spread(&blocks);
 		glutPostRedisplay();
-		break;
 	}
 }
 
@@ -213,16 +211,15 @@ static void cb_specialFunc(int key, int x, int y)
 	(void) x;
 	(void) y;
 
-	switch (key)
+	if (key == GLUT_KEY_PAGE_UP)
 	{
-	case GLUT_KEY_PAGE_UP:
 		blist_del(&blocks);
 		setCurFunct(curFunct ? curFunct - 1 : funList->n - 1);
-		break;
-	case GLUT_KEY_PAGE_DOWN:
+	}
+	else if (key == GLUT_KEY_PAGE_DOWN)
+	{
 		blist_del(&blocks);
 		setCurFunct(curFunct < funList->n-1 ? curFunct + 1 : 0);
-		break;
 	}
 }
 

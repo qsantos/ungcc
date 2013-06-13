@@ -114,13 +114,10 @@ char* elf_str(elf_t* elf, size_t addr)
 	ADDCH('"');
 	char c;
 	while (read(fd, &c, 1) && c)
-		switch (c)
-		{
-		case '\n': ADDCH('\\'); ADDCH('n'); break;
-		case '\r': ADDCH('\\'); ADDCH('r'); break;
-		case '\t': ADDCH('\\'); ADDCH('t'); break;
-		default:   ADDCH(c); break;
-		}
+		if      (c == '\n') {ADDCH('\\'); ADDCH('n');}
+		else if (c == '\r') {ADDCH('\\'); ADDCH('r');}
+		else if (c == '\t') {ADDCH('\\'); ADDCH('t');}
+		else                 ADDCH(c)
 
 	ADDCH('"');
 	ADDCH(0);

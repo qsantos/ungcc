@@ -496,9 +496,6 @@ void stripcontext(expr_t* e)
 	reset_visited(e); // HACK: unexpected behaviour, does not reset 'visited' in postproc() without this
 }
 
-#define POST1(T) case T: postproc_aux1(e->v.uni.a); break;
-#define POST2(T) case T: postproc_aux1(e->v.bin.a); postproc_aux1(e->v.bin.b); break;
-
 static void postproc_aux1(expr_t* e)
 {
 	if (e == NULL) return;
@@ -506,16 +503,21 @@ static void postproc_aux1(expr_t* e)
 	switch (e->type)
 	{
 	// unary
-	POST1(E_PUSH); POST1(E_POP);
-	POST1(E_CALL);
-	POST1(E_NOT);  POST1(E_NEG);
+	case E_PUSH: case E_POP:
+	case E_CALL:
+	case E_NOT:  case E_NEG:
+		postproc_aux1(e->v.uni.a);
+		break;
 
 	// binary
-	POST2(E_JMP);  POST2(E_JXX);
-	POST2(E_ADD);  POST2(E_SUB); POST2(E_SBB); POST2(E_MUL); POST2(E_DIV);
-	POST2(E_OR);
-	POST2(E_SAR);  POST2(E_SAL); POST2(E_SHR); POST2(E_SHL);
-	POST2(E_XCHG); POST2(E_MOV);
+	case E_JMP:  case E_JXX:
+	case E_ADD:  case E_SUB: case E_SBB: case E_MUL: case E_DIV:
+	case E_OR:
+	case E_SAR:  case E_SAL: case E_SHR: case E_SHL:
+	case E_XCHG: case E_MOV:
+		postproc_aux1(e->v.bin.a);
+		postproc_aux1(e->v.bin.b);
+		break;
 
 	case E_AND:
 	{
@@ -608,9 +610,6 @@ void postproc(expr_t* e)
 	postproc_aux2(e);
 }
 
-#define REDUC1(T) case T: reduc_aux1(r, e->v.uni.a, last); break;
-#define REDUC2(T) case T: reduc_aux1(r, e->v.bin.a, last); reduc_aux1(r, e->v.bin.b, last); break;
-
 static void reduc_aux1(expr_t* r, expr_t* e, expr_t** last)
 {
 	if (e == NULL) return;
@@ -631,15 +630,20 @@ static void reduc_aux1(expr_t* r, expr_t* e, expr_t** last)
 	}
 
 	// unary
-	REDUC1(E_PUSH); REDUC1(E_POP);
-	REDUC1(E_CALL);
-	REDUC1(E_NOT);  REDUC1(E_NEG);
+	case E_PUSH: case E_POP:
+	case E_CALL:
+	case E_NOT:  case E_NEG:
+		reduc_aux1(r, e->v.uni.a, last);
+		break;
 
 	// binary
-	REDUC2(E_JMP); REDUC2(E_JXX);
-	REDUC2(E_ADD); REDUC2(E_SUB); REDUC2(E_SBB); REDUC2(E_MUL); REDUC2(E_DIV);
-	REDUC2(E_AND); REDUC2(E_OR);  REDUC2(E_XOR);
-	REDUC2(E_SAR); REDUC2(E_SAL); REDUC2(E_SHR); REDUC2(E_SHL);
+	case E_JMP: case E_JXX:
+	case E_ADD: case E_SUB: case E_SBB: case E_MUL: case E_DIV:
+	case E_AND: case E_OR:  case E_XOR:
+	case E_SAR: case E_SAL: case E_SHR: case E_SHL:
+		reduc_aux1(r, e->v.bin.a, last);
+		reduc_aux1(r, e->v.bin.a, last);
+		break;
 
 	case E_MOV:
 	case E_LEA:
