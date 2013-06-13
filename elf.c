@@ -172,10 +172,6 @@ char* elf_plt(elf_t* elf, size_t addr)
 
 	// reads the symbol name
 	lseek(fd, elf->dynstr.sh_offset + stroff, SEEK_SET);
-	char buf[30];
-	read(fd, buf, 30);
-	printf("%s\n", buf);
-	exit(0);
 
 	char*  ret = malloc(1);
 	size_t n   = 0;
