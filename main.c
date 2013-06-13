@@ -72,7 +72,7 @@ int main(int argc, char** argv)
 			expr_t* e = fl.e[i].e;
 			stripcontext(e);
 			postproc(e);
-			reduc(e);
+//			reduc(e);
 		}
 		zui(argc, argv, &fl);
 

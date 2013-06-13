@@ -550,12 +550,16 @@ static void postproc_aux1(expr_t* e)
 			size_t  scale = b->v.addr.scale;
 
 			e->type = E_MOV;
-			if (idx != R_IZ)
+			if (idx == base)
 			{
-				expr_t* e = e_reg(idx);
-				if (scale != 1)    e = e_mul(e_im(scale), e);
-				if (base  != R_IZ) e = e_add(e_reg(base), e);
-				e->v.bin.b = e;
+				e->v.bin.b = e_mul(e_im(scale+1), e_reg(idx));
+			}
+			else if (idx != R_IZ)
+			{
+				expr_t* nb = e_reg(idx);
+				if (scale != 1)    nb = e_mul(e_im(scale), nb);
+				if (base  != R_IZ) nb = e_add(e_reg(base), nb);
+				e->v.bin.b = nb;
 			}
 			else if (base != R_IZ)
 			{
