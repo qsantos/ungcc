@@ -1,11 +1,10 @@
 #include "elf.h"
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <elf.h>
-
-#include <stdio.h>
-#include <stdlib.h>
 
 #define ERR(...) { fprintf(stderr, __VA_ARGS__); exit(1); }
 
@@ -16,6 +15,7 @@ struct elf
 
 	// some section headers
 	Elf32_Shdr rodata;
+	Elf32_Shdr plt;
 	Elf32_Shdr dynstr;
 	Elf32_Shdr dynsym;
 	Elf32_Shdr rel_plt;
@@ -82,6 +82,7 @@ void elf_begin(elf_t* elf, int fd)
 
 		// save in appropriate member
 		if (strcmp(buf, ".rodata" ) == 0) memcpy(&elf->rodata,  &shdr, sizeof(Elf32_Shdr));
+		if (strcmp(buf, ".plt"    ) == 0) memcpy(&elf->plt,     &shdr, sizeof(Elf32_Shdr));
 		if (strcmp(buf, ".dynstr" ) == 0) memcpy(&elf->dynstr,  &shdr, sizeof(Elf32_Shdr));
 		if (strcmp(buf, ".dynsym" ) == 0) memcpy(&elf->dynsym,  &shdr, sizeof(Elf32_Shdr));
 		if (strcmp(buf, ".rel.plt") == 0) memcpy(&elf->rel_plt, &shdr, sizeof(Elf32_Shdr));
@@ -94,17 +95,18 @@ size_t elf_entry(elf_t* elf)
 }
 
 #define ADDCH(C) {if (n == a) { a*=2; ret = realloc(ret, a); } ret[n++] = C;}
-char* elf_str(elf_t* elf, size_t off)
+char* elf_str(elf_t* elf, size_t addr)
 {
 	int         fd   = elf->fd;
 	Elf32_Shdr* shdr = &elf->rodata;
 
 	// checks that address is in .strtab
-	size_t addr = shdr->sh_addr;
-	if (!(addr <= off && off < addr + shdr->sh_size))
+	Elf32_Addr pltaddr = shdr->sh_addr;
+	if (!(pltaddr <= addr && addr < pltaddr + shdr->sh_size))
 		return NULL;
 
-	lseek(fd, off - addr + shdr->sh_offset, SEEK_SET);
+	Elf32_Off off = addr - pltaddr;
+	lseek(fd, shdr->sh_offset + off, SEEK_SET);
 	char*  ret = malloc(1);
 	size_t n   = 0;
 	size_t a   = 1;
@@ -122,5 +124,74 @@ char* elf_str(elf_t* elf, size_t off)
 
 	ADDCH('"');
 	ADDCH(0);
+	return ret;
+}
+
+char* elf_plt(elf_t* elf, size_t addr)
+{
+	int fd = elf->fd;
+
+	// the address should be in .plt
+	Elf32_Addr pltaddr = elf->plt.sh_addr;
+	if (!(pltaddr <= addr && addr < pltaddr + elf->plt.sh_size))
+		return NULL;
+
+	Elf32_Off off = addr - pltaddr;
+
+	// reads the reloc_offset from the PLT wrapper
+	// 6 bytes for the first jmp instruction
+	// 1 byte for the pushl opcode
+	lseek(fd, elf->plt.sh_offset + off + 0x7, SEEK_SET);
+	Elf32_Off reloc;
+	read(fd, &reloc, 4);
+
+	// the offset should be in .rel.plt
+	if (reloc > elf->rel_plt.sh_size)
+		return NULL;
+
+	// plt relation information
+	lseek(fd, elf->rel_plt.sh_offset + reloc, SEEK_SET);
+	Elf32_Rel rel;
+	read(fd, &rel, sizeof(Elf32_Rel));
+	Elf32_Word symidx = rel.r_info >> 8; // gets the index of the symbol
+	Elf32_Off symaddr = symidx * sizeof(Elf32_Sym); // symbol address
+
+	// the offset should be in .dyn.sym
+	if (symaddr > elf->dynsym.sh_size)
+		return NULL;
+
+	// symbol information
+	lseek(fd, elf->dynsym.sh_offset + symaddr, SEEK_SET);
+	Elf32_Sym sym;
+	read(fd, &sym, sizeof(Elf32_Sym));
+	Elf32_Off stroff = sym.st_name; // gets the string offset of the symbol name
+
+	// the offset should be in .dyn.str
+	if (stroff > elf->dynstr.sh_size)
+		return NULL;
+
+	// reads the symbol name
+	lseek(fd, elf->dynstr.sh_offset + stroff, SEEK_SET);
+	char buf[30];
+	read(fd, buf, 30);
+	printf("%s\n", buf);
+	exit(0);
+
+	char*  ret = malloc(1);
+	size_t n   = 0;
+	size_t a   = 1;
+	char c;
+	while (read(fd, &c, 1))
+	{
+		if (n == a)
+		{
+			a *= 2;
+			ret = realloc(ret, a);
+		}
+		ret[n++] = c;
+		if (c == 0)
+			break;
+	}
+
 	return ret;
 }
