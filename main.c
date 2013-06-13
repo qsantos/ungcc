@@ -4,7 +4,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "elist.h"
+#include "parser.h"
+#include "postproc.h"
 #include "interface.h"
 
 static void usage(const char* name)
@@ -66,13 +67,13 @@ int main(int argc, char** argv)
 		elist_t fl; // function list
 
 		read_file(&el, elf, f);
-		functions(&fl, &el, entryPoint);
+		post_funs(&fl, &el, entryPoint);
 		for (size_t i = 0; i < fl.n; i++)
 		{
 			expr_t* e = fl.e[i].e;
-			stripcontext(e);
-			postproc(e);
-//			reduc(e);
+			post_rmctx(e);
+			post_simpl(e);
+			post_reduc(e);
 		}
 		zui(argc, argv, &fl);
 
