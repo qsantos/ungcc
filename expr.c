@@ -121,6 +121,64 @@ expr_t* e_cpy(expr_t* e)
 	return ret;
 }
 
+void e_rstvisited(expr_t* e)
+{
+	if (e == NULL || !e->visited)
+		return;
+	e->visited = false;
+
+	e_rstvisited(e->next);
+	e_rstvisited(e->branch);
+}
+
+#define CMP1(T) case T: return e_cmp(a->v.uni.a, b->v.uni.a);
+#define CMP2(T) case T: return e_cmp(a->v.bin.a, b->v.bin.a) || e_cmp(a->v.bin.b, b->v.bin.b);
+
+int e_cmp(expr_t* a, expr_t* b)
+{
+	if (a == NULL && b == NULL) return 0;
+	if (a == NULL || b == NULL) return 1;
+
+	if (a->type != b->type)
+		return 1;
+	switch (a->type)
+	{
+	case E_UNK:
+		return 1;
+
+	case E_REG:
+		return a->v.reg.t == b->v.reg.t ? 0 : 1;
+	case E_IM:
+		return a->v.im.v == b->v.im.v ? 0 : 1;
+	case E_ADDR:
+		return a->v.addr.base  == b->v.addr.base  &&
+		       a->v.addr.idx   == b->v.addr.idx   &&
+		       a->v.addr.scale == b->v.addr.scale &&
+		       a->v.addr.disp  == b->v.addr.disp ? 0 : 1;
+
+	// zeroary
+	case E_NOP:
+	case E_RET:
+	case E_HLT:
+		return 0;
+	// unary
+	CMP1(E_PUSH); CMP1(E_POP);
+	CMP1(E_CALL);
+	CMP1(E_NOT);  CMP1(E_NEG);
+
+	// binary
+	CMP2(E_JMP);  CMP2(E_JXX);
+	CMP2(E_ADD);  CMP2(E_SUB); CMP2(E_SBB); CMP2(E_MUL); CMP2(E_DIV);
+	CMP2(E_AND);  CMP2(E_OR);  CMP2(E_XOR);
+	CMP2(E_SAR);  CMP2(E_SAL); CMP2(E_SHR); CMP2(E_SHL);
+	CMP2(E_XCHG); CMP2(E_MOV); CMP2(E_LEA);
+
+	case E_TEST:
+		return a->v.test.t == b->v.test.t ? e_cmp(a->v.test.a, b->v.test.a) : 0;
+	}
+	return 1;
+}
+
 expr_t* e_unk(char* comment)
 {
 	expr_t* ret = e_new();
@@ -215,62 +273,4 @@ expr_t* e_test(ttype_t t, expr_t* a)
 	ret->v.test.t = t;
 	ret->v.test.a = a;
 	return ret;
-}
-
-void reset_visited(expr_t* e)
-{
-	if (e == NULL || !e->visited)
-		return;
-	e->visited = false;
-
-	reset_visited(e->next);
-	reset_visited(e->branch);
-}
-
-#define CMP1(T) case T: return cmp_expr(a->v.uni.a, b->v.uni.a);
-#define CMP2(T) case T: return cmp_expr(a->v.bin.a, b->v.bin.a) || cmp_expr(a->v.bin.b, b->v.bin.b);
-
-int cmp_expr(expr_t* a, expr_t* b)
-{
-	if (a == NULL && b == NULL) return 0;
-	if (a == NULL || b == NULL) return 1;
-
-	if (a->type != b->type)
-		return 1;
-	switch (a->type)
-	{
-	case E_UNK:
-		return 1;
-
-	case E_REG:
-		return a->v.reg.t == b->v.reg.t ? 0 : 1;
-	case E_IM:
-		return a->v.im.v == b->v.im.v ? 0 : 1;
-	case E_ADDR:
-		return a->v.addr.base  == b->v.addr.base  &&
-		       a->v.addr.idx   == b->v.addr.idx   &&
-		       a->v.addr.scale == b->v.addr.scale &&
-		       a->v.addr.disp  == b->v.addr.disp ? 0 : 1;
-
-	// zeroary
-	case E_NOP:
-	case E_RET:
-	case E_HLT:
-		return 0;
-	// unary
-	CMP1(E_PUSH); CMP1(E_POP);
-	CMP1(E_CALL);
-	CMP1(E_NOT);  CMP1(E_NEG);
-
-	// binary
-	CMP2(E_JMP);  CMP2(E_JXX);
-	CMP2(E_ADD);  CMP2(E_SUB); CMP2(E_SBB); CMP2(E_MUL); CMP2(E_DIV);
-	CMP2(E_AND);  CMP2(E_OR);  CMP2(E_XOR);
-	CMP2(E_SAR);  CMP2(E_SAL); CMP2(E_SHR); CMP2(E_SHL);
-	CMP2(E_XCHG); CMP2(E_MOV); CMP2(E_LEA);
-
-	case E_TEST:
-		return a->v.test.t == b->v.test.t ? cmp_expr(a->v.test.a, b->v.test.a) : 0;
-	}
-	return 1;
 }

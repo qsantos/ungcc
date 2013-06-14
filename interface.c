@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "graph.h"
+#include "blist.h"
 #include "print.h"
 
 #define CURSOR_SZ 1

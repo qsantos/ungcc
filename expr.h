@@ -120,10 +120,16 @@ struct expr
 	bool visited;
 };
 
-expr_t* e_new();
-void    e_del(expr_t* e, bool keep);
-expr_t* e_cpy(expr_t* e);
+// generic operations
+expr_t* e_new       ();
+void    e_del       (expr_t* e, bool keep);
+expr_t* e_cpy       (expr_t* e);
+void    e_rstvisited(expr_t* e);
+int     e_cmp       (expr_t* a, expr_t* b);
 
+// = now only specific constructos =
+
+// unknown
 expr_t* e_unk(char* comment);
 
 // register, immediate, address
@@ -164,9 +170,7 @@ expr_t* e_xchg(expr_t* a, expr_t* b);
 expr_t* e_mov (expr_t* a, expr_t* b);
 expr_t* e_lea (expr_t* a, expr_t* b);
 
+// test
 expr_t* e_test(ttype_t t, expr_t* a);
-
-void reset_visited(expr_t* e);
-int  cmp_expr     (expr_t* a, expr_t* b);
 
 #endif

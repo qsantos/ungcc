@@ -189,9 +189,9 @@ void post_rmctx(expr_t* e)
 		e->type = E_NOP;
 	}
 
-	reset_visited(e);
+	e_rstvisited(e);
 	isContextEnd(e);
-	reset_visited(e); // HACK: unexpected behaviour, does not reset 'visited' in postproc() without this
+	e_rstvisited(e); // HACK: unexpected behaviour, does not reset 'visited' in postproc() without this
 }
 
 static void post_simpl_aux1(expr_t* e)
@@ -221,7 +221,7 @@ static void post_simpl_aux1(expr_t* e)
 	{
 		expr_t* a = e->v.bin.a; post_simpl_aux1(a);
 		expr_t* b = e->v.bin.b; post_simpl_aux1(b);
-		if (cmp_expr(a, b) == 0)
+		if (e_cmp(a, b) == 0)
 		{
 			free(e->label);
 			e_del(b, false);
@@ -233,7 +233,7 @@ static void post_simpl_aux1(expr_t* e)
 	{
 		expr_t* a = e->v.bin.a; post_simpl_aux1(a);
 		expr_t* b = e->v.bin.b; post_simpl_aux1(b);
-		if (cmp_expr(a, b) == 0)
+		if (e_cmp(a, b) == 0)
 		{
 			e->type = E_IM;
 			e->v.im.v = 0;
@@ -304,7 +304,7 @@ static void post_simpl_aux2(expr_t* e)
 }
 void post_simpl(expr_t* e)
 {
-	reset_visited(e);
+	e_rstvisited(e);
 	post_simpl_aux2(e);
 }
 
@@ -384,6 +384,6 @@ void post_reduc(expr_t* e)
 {
 	expr_t* last[N_REG];
 	memset(last, 0, N_REG * sizeof(expr_t*));
-	reset_visited(e);
+	e_rstvisited(e);
 	post_reduc_aux2(e, last);
 }

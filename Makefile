@@ -5,7 +5,7 @@ TARGETS = ungcc
 
 all: $(TARGETS)
 
-ungcc: main.o elf.o expr.o elist.o parser.o postproc.o print.o interface.o graph.o
+ungcc: main.o elf.o expr.o elist.o parser.o postproc.o print.o interface.o blist.o
 	$(CC) $(LDFLAGS) $^ -o $@
 
 %.o: %.c

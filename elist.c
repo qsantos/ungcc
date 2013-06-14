@@ -27,7 +27,7 @@ void elist_push(elist_t* l, size_t o, expr_t* e)
 	l->n++;
 }
 
-static int cmp_eopair(const void* a, const void* b)
+static int eopair_cmp(const void* a, const void* b)
 {
 	const eopair_t* eoa = (const eopair_t*) a;
 	const eopair_t* eob = (const eopair_t*) b;
@@ -39,5 +39,5 @@ static int cmp_eopair(const void* a, const void* b)
 eopair_t* elist_at(elist_t* l, size_t o)
 {
 	eopair_t key = {o, NULL};
-	return bsearch(&key, l->e, l->n, sizeof(eopair_t), cmp_eopair);
+	return bsearch(&key, l->e, l->n, sizeof(eopair_t), eopair_cmp);
 }

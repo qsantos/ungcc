@@ -1,4 +1,4 @@
-#include "graph.h"
+#include "blist.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -97,7 +97,7 @@ static void blist_gen_aux2(blist_t* l, expr_t* e)
 void blist_gen(blist_t* l, expr_t* e)
 {
 	// create blocks
-	reset_visited(e);
+	e_rstvisited(e);
 	blist_new(l);
 	blist_gen_aux1(l, e);
 
@@ -105,7 +105,7 @@ void blist_gen(blist_t* l, expr_t* e)
 	qsort(l->b, l->n, sizeof(block_t), cmp_block);
 
 	// create hierarchy
-	reset_visited(e);
+	e_rstvisited(e);
 	blist_gen_aux2(l, e);
 }
 
