@@ -5,7 +5,7 @@
 
 #include "print.h"
 
-void post_funs(flist_t* dst, elist_t* l, size_t entryPoint)
+void post_funs(flist_t* dst, elist_t* l, elf_t* elf)
 {
 	// builds hierarchy
 	for (size_t i = 0; i < l->n; i++)
@@ -41,6 +41,7 @@ void post_funs(flist_t* dst, elist_t* l, size_t entryPoint)
 	}
 
 	// finds _start()
+	size_t entryPoint = elf_entry(elf);
 	eopair_t* p = elist_at(l, entryPoint);
 	if (!p)
 		fprintf(stderr, "No such instruction: %#x\n\n", entryPoint);
@@ -68,7 +69,8 @@ void post_funs(flist_t* dst, elist_t* l, size_t entryPoint)
 	p->e->isFun = true;
 
 	// finds called functions
-	flist_new(dst);
+	flist_t tmp_fl;
+	flist_new(&tmp_fl);
 	for (size_t i = 0; i < l->n; i++)
 	{
 		expr_t* e = l->e[i].e;
@@ -100,7 +102,7 @@ void post_funs(flist_t* dst, elist_t* l, size_t entryPoint)
 		else
 		{
 			// this is an external function
-			flist_push(dst, address, NULL);
+			flist_push(&tmp_fl, address, NULL);
 		}
 	}
 
@@ -111,18 +113,11 @@ void post_funs(flist_t* dst, elist_t* l, size_t entryPoint)
 		size_t  o = l->e[i].o;
 		if (e->isFun)
 		{
-			flist_push(dst, o, e);
+			flist_push(&tmp_fl, o, e);
 			if (e->label == NULL)
 			{
 				if (o == mainAddr)
 					e->label = "main";
-// the naming should be done later on
-//				else
-//				{
-//					char buf[1024];
-//					snprintf(buf, 1024, "fct%zu", dst->n);
-//					e->label = strdup(buf);
-//				}
 			}
 			if (i)
 			{
@@ -131,7 +126,72 @@ void post_funs(flist_t* dst, elist_t* l, size_t entryPoint)
 			}
 		}
 	}
+
+	// now extract sorted and named uniq function symbols
+	flist_sort(&tmp_fl);
+	flist_new(dst);
+	size_t last_addr = 0;
+	size_t unnamed_idx = 0;
+	for (size_t i = 0; i < tmp_fl.n; i++)
+	{
+		function_t* fun = tmp_fl.f + i;
+		size_t addr = fun->address;
+
+		if (addr == last_addr)
+			continue;
+		last_addr = addr;
+
+		fun = flist_push(dst, addr, fun->expr);
+		if (fun->name)
+			continue;
+
+		fun->name = elf_plt(elf, addr);
+		if (fun->name)
+			continue;
+
+		// TODO: local function name solving
+		char buf[1024];
+		snprintf(buf, 1024, "fct%u", ++unnamed_idx);
+		fun->name = strdup(buf);
+	}
+	flist_del(&tmp_fl);
+
+	// TODO: this is a quickfix
+	// assigns function symbols to calls and jumps
+	for (size_t i = 0; i < l->n; i++)
+	{
+		expr_t* e = l->e[i].e;
+		printf("Starting %#x\n", l->e[i].o);
+
+		expr_t* b;
+		if (e->type == E_JMP)
+			b = e->v.bin.a;
+		else if (e->type == E_MOV)
+		{
+			expr_t* a = e->v.bin.b;
+			if (a->type != E_CALL)
+				continue;
+			b = a->v.uni.a;
+		}
+		else
+			continue;
+
+		if (b->type != E_IM)
+			continue;
+
+		size_t addr = b->v.im.v;
+		function_t* f = flist_find(dst, addr);
+		if (f == NULL)
+		{
+			fprintf(stderr, "Could not find %#x\n", addr);
+			continue;
+		}
+
+		fprintf(stderr, "Detected call to <%s> at %#x\n", f->name, l->e[i].o);
+		b->v.im.symbol = f->name;
+	}
 }
+
 
 static bool isContextInit(expr_t* e)
 {

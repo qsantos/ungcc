@@ -61,13 +61,12 @@ int main(int argc, char** argv)
 		// reads ELF information
 		elf_t* elf = elf_new();
 		elf_begin(elf, input);
-		size_t entryPoint = elf_entry(elf);
 
 		elist_t el; // expression list
 		flist_t fl; // function list
 
 		read_file(&el, elf, f);
-		post_funs(&fl, &el, entryPoint);
+		post_funs(&fl, &el, elf);
 		for (size_t i = 0; i < fl.n; i++)
 		{
 			expr_t* e = fl.f[i].expr;
