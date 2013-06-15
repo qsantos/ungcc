@@ -45,9 +45,6 @@ static int sym_cmp(const void* a, const void* b)
 	Elf32_Sym* sa = (Elf32_Sym*) a;
 	Elf32_Sym* sb = (Elf32_Sym*) b;
 
-	if (sa->st_shndx < sb->st_shndx) return -1;
-	if (sa->st_shndx > sb->st_shndx) return  1;
-
 	if (sa->st_value < sb->st_value) return -1;
 	if (sa->st_value > sb->st_value) return  1;
 	                                 return  0;
@@ -231,12 +228,11 @@ char* elf_sym(elf_t* elf, size_t addr)
 	if (!(textaddr <= addr && addr < textaddr + elf->text.sh_size))
 		return NULL;
 
-	Elf32_Off off = addr;// - textaddr; // TODO
+	Elf32_Off off = addr;
 
 	// finds the first information about the symbol
 	Elf32_Sym key;
 	key.st_value = off;
-	key.st_shndx = 13; // TODO
 	Elf32_Sym* sym = bsearch(&key, elf->sym_d, elf->sym_n, sizeof(Elf32_Sym), sym_cmp);
 
 	// finds the first right symbol
