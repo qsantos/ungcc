@@ -2,7 +2,7 @@
 #define POSTPROC_H
 
 #include "elist.h"
-#include "function.h"
+#include "flist.h"
 
 // builds branching hierarchy and list functions into 'f'
 void post_funs (flist_t* dst, elist_t* l, size_t entryPoint);
