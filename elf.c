@@ -228,21 +228,21 @@ char* elf_sym(elf_t* elf, size_t addr)
 	if (!(textaddr <= addr && addr < textaddr + elf->text.sh_size))
 		return NULL;
 
-	Elf32_Off off = addr;
-
 	// finds the first information about the symbol
 	Elf32_Sym key;
-	key.st_value = off;
+	key.st_value = addr;
 	Elf32_Sym* sym = bsearch(&key, elf->sym_d, elf->sym_n, sizeof(Elf32_Sym), sym_cmp);
-
-	// finds the first right symbol
-	for (; ELF32_ST_TYPE(sym->st_info) != STT_FUNC; sym++)
 
 	if (sym == NULL)
 		return NULL;
-	Elf32_Off stroff = sym->st_name; // gets the string offset of the symbol name
+
+	// finds the first right symbol
+	for (; sym->st_value == addr && ELF32_ST_TYPE(sym->st_info) != STT_FUNC; sym++);
+	if (sym->st_value != addr)
+		return NULL;
 
 	// reads the symbol name
+	Elf32_Off stroff = sym->st_name; // gets the string offset of the symbol name
 	lseek(fd, elf->strtab.sh_offset + stroff, SEEK_SET);
 
 	char*  ret = malloc(1);

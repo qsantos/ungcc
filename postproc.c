@@ -184,10 +184,7 @@ void post_funs(flist_t* dst, elist_t* l, elf_t* elf)
 		size_t addr = b->v.im.v;
 		function_t* f = flist_find(dst, addr);
 		if (f == NULL)
-		{
-			fprintf(stderr, "Could not find %#x\n", addr);
 			continue;
-		}
 
 		b->v.im.symbol = f->name;
 	}
