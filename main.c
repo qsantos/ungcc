@@ -64,20 +64,22 @@ int main(int argc, char** argv)
 		size_t entryPoint = elf_entry(elf);
 
 		elist_t el; // expression list
-		elist_t fl; // function list
+		flist_t fl; // function list
 
 		read_file(&el, elf, f);
 		post_funs(&fl, &el, entryPoint);
 		for (size_t i = 0; i < fl.n; i++)
 		{
-			expr_t* e = fl.e[i].e;
+			expr_t* e = fl.f[i].expr;
+			if (e == NULL)
+				continue;
 			post_rmctx(e);
 			post_simpl(e);
 			post_reduc(e);
 		}
 		zui(argc, argv, &fl);
 
-		elist_del(&fl);
+		flist_del(&fl);
 		elist_del(&el);
 
 		elf_del(elf);

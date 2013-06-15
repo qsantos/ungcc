@@ -5,7 +5,7 @@
 
 #include "print.h"
 
-void post_funs(elist_t* dst, elist_t* l, size_t entryPoint)
+void post_funs(flist_t* dst, elist_t* l, size_t entryPoint)
 {
 	// builds hierarchy
 	for (size_t i = 0; i < l->n; i++)
@@ -40,33 +40,6 @@ void post_funs(elist_t* dst, elist_t* l, size_t entryPoint)
 		(p-1)->e->endBlck = true;
 	}
 
-	// find functions
-	for (size_t i = 0; i < l->n; i++)
-	{
-		expr_t* e = l->e[i].e;
-
-		// ax = fct()
-		if (e->type != E_MOV)
-			continue;
-
-		expr_t* a = e->v.bin.b;
-		if (a->type != E_CALL)
-			continue;
-
-		expr_t* b = a->v.uni.a;
-		if (b->type != E_IM)
-		{
-			fprintf(stderr, "Unsupported instruction at %#x: ", l->e[i].o);
-			fprint_stat(stderr, a);
-			continue;
-		}
-
-		eopair_t* p = elist_at(l, b->v.im.v);
-		if (!p)
-			continue;
-		p->e->isFun = true;
-	}
-
 	// finds _start()
 	eopair_t* p = elist_at(l, entryPoint);
 	if (!p)
@@ -94,25 +67,62 @@ void post_funs(elist_t* dst, elist_t* l, size_t entryPoint)
 	}
 	p->e->isFun = true;
 
-	// lists functions
-	elist_new(dst);
+	// finds called functions
+	flist_new(dst);
+	for (size_t i = 0; i < l->n; i++)
+	{
+		expr_t* e = l->e[i].e;
+
+		// ax = fct()
+		if (e->type != E_MOV)
+			continue;
+
+		expr_t* a = e->v.bin.b;
+		if (a->type != E_CALL)
+			continue;
+
+		expr_t* b = a->v.uni.a;
+		if (b->type != E_IM)
+		{
+			fprintf(stderr, "Unsupported instruction at %#x: ", l->e[i].o);
+			fprint_stat(stderr, a);
+			continue;
+		}
+
+		size_t address = b->v.im.v;
+		eopair_t* p = elist_at(l, address);
+		if (p)
+		{
+			// the function is defined in .text, it will be
+			// saved later, with corresponding expression
+			p->e->isFun = true;
+		}
+		else
+		{
+			// this is an external function
+			flist_push(dst, address, NULL);
+		}
+	}
+
+	// lists local functions
 	for (size_t i = 0; i < l->n; i++)
 	{
 		expr_t* e = l->e[i].e;
 		size_t  o = l->e[i].o;
 		if (e->isFun)
 		{
-			elist_push(dst, o, e);
+			flist_push(dst, o, e);
 			if (e->label == NULL)
 			{
 				if (o == mainAddr)
 					e->label = "main";
-				else
-				{
-					char buf[1024];
-					snprintf(buf, 1024, "fct%zu", dst->n);
-					e->label = strdup(buf);
-				}
+// the naming should be done later on
+//				else
+//				{
+//					char buf[1024];
+//					snprintf(buf, 1024, "fct%zu", dst->n);
+//					e->label = strdup(buf);
+//				}
 			}
 			if (i)
 			{

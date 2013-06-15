@@ -28,7 +28,7 @@ static double viewZoom = 1;
 static const double blockScale = 0.1;
 static const double blockPadding = 20;
 
-static elist_t* funList;
+static flist_t* funList;
 static size_t   curFunct;
 static block_t* curBlock;
 static blist_t  blocks;
@@ -74,7 +74,7 @@ static inline void blist_setdim(blist_t* l)
 static void setCurFunct(size_t i)
 {
 	curFunct = i;
-	blist_gen   (&blocks, funList->e[curFunct].e);
+	blist_gen   (&blocks, funList->f[curFunct].expr);
 	blist_setdim(&blocks);
 	blist_spread(&blocks);
 
@@ -158,7 +158,9 @@ static void cb_displayFunc()
 		else
 			glColor4f(1, 1, 1, 1);
 
-		expr_t* fun = funList->e[i].e;
+		expr_t* fun = funList->f[i].expr;
+		if (fun == NULL)
+			continue; // TODO
 		char glText[BUFSIZE];
 		snprintf(glText, BUFSIZE, "%s\n", fun->label);
 		glutStrokeString(FONT, (unsigned char*) glText);
@@ -302,7 +304,7 @@ static void glInit()
 //	glTranslatef(0.375, 0.375, 0); // hack against pixel centered coordinates
 }
 
-void zui(int argc, char** argv, elist_t* l)
+void zui(int argc, char** argv, flist_t* l)
 {
 	glutInit(&argc, argv);
 	glutInitWindowSize(winWidth, winHeight);
@@ -321,7 +323,8 @@ void zui(int argc, char** argv, elist_t* l)
 
 	funList  = l;
 	curFunct = 0;
-	blist_gen   (&blocks, funList->e[curFunct].e);
+	for (; funList->f[curFunct].expr == NULL; curFunct++); // TODO
+	blist_gen   (&blocks, funList->f[curFunct].expr);
 	blist_setdim(&blocks);
 	blist_spread(&blocks);
 

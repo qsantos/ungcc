@@ -62,26 +62,13 @@ char* read_operand(expr_t** dst, size_t* sz, elf_t* elf, char* str)
 	{
 		size_t im = strtoul(str+1, (char**) &str, 16);
 		*dst = e_im(im);
-		(*dst)->v.im.symbol = elf_str(elf, im);
+		(*dst)->v.im.symbol = elf_str(elf, im); // TODO
 		return str;
 	}
 	else if ('0' <= str[0] && str[0] <= '9' && str[1] != 'x') // immediate address
 	{
 		size_t im = strtoul(str, (char**) &str, 16);
 		*dst = e_im(im);
-
-		char* s = elf_plt(elf, im);
-
-		// read symbol
-		if (s == NULL && strchr(str, '+') == NULL) // no offset
-		{
-			str += 2; // " <"
-			char* end = strchr(str, '>');
-			s = strndup(str, end - str);
-		}
-
-		(*dst)->v.im.symbol = s;
-
 		return str;
 	}
 	else if (str[0] == '*') // indirect address
