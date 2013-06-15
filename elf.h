@@ -21,4 +21,6 @@ char* elf_str(elf_t* elf, size_t addr);
 // through the PLT wrapper located at address 'addr'
 char* elf_plt(elf_t* elf, size_t addr);
 
+char* elf_sym(elf_t* elf, size_t addr);
+
 #endif

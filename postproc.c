@@ -149,7 +149,10 @@ void post_funs(flist_t* dst, elist_t* l, elf_t* elf)
 		if (fun->name)
 			continue;
 
-		// TODO: local function name solving
+		fun->name = elf_sym(elf, addr);
+		if (fun->name)
+			continue;
+
 		char buf[1024];
 		snprintf(buf, 1024, "fct%u", ++unnamed_idx);
 		fun->name = strdup(buf);
@@ -161,7 +164,6 @@ void post_funs(flist_t* dst, elist_t* l, elf_t* elf)
 	for (size_t i = 0; i < l->n; i++)
 	{
 		expr_t* e = l->e[i].e;
-		printf("Starting %#x\n", l->e[i].o);
 
 		expr_t* b;
 		if (e->type == E_JMP)
@@ -187,7 +189,6 @@ void post_funs(flist_t* dst, elist_t* l, elf_t* elf)
 			continue;
 		}
 
-		fprintf(stderr, "Detected call to <%s> at %#x\n", f->name, l->e[i].o);
 		b->v.im.symbol = f->name;
 	}
 }
