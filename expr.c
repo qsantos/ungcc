@@ -6,7 +6,6 @@
 expr_t* e_new()
 {
 	expr_t* ret = malloc(sizeof(expr_t));
-	ret->label   = NULL;
 	ret->isFun   = false;
 	ret->endBlck = false;
 	ret->next    = NULL;

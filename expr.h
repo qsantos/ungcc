@@ -108,7 +108,6 @@ struct expr
 		bin_t  bin;
 		test_t test;
 	} v;
-	char* label;
 
 	// hierarchy information
 	bool    isFun;

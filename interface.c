@@ -52,6 +52,14 @@ static inline void blist_setdim(blist_t* l)
 
 		double maxWidth = 0;
 		size_t lines = 0;
+		if (i == 0)
+		{
+			char*  title = funList->f[curFunct].name;
+			double width = glutStrokeLength(FONT, (unsigned char*) title);
+			maxWidth = width;
+
+			lines += 2;
+		}
 		for (expr_t* e = b->e; e; e = e->next)
 		{
 			char glText[BUFSIZE];
@@ -102,6 +110,23 @@ static void blist_display(blist_t* l)
 			glVertex2f(b->w, b->h);
 			glVertex2f(   0, b->h);
 		glEnd();
+
+		// prints the function name
+		if (i == 0)
+		{
+			char*  title = funList->f[curFunct].name;
+			double width = glutStrokeLength(FONT, (unsigned char*) title);
+			width *= blockScale;
+
+			glPushMatrix();
+			glTranslatef(b->w/2 - width/2, blockPadding, 0);
+			glScalef(blockScale, -blockScale, blockScale);
+
+			glutStrokeString(FONT, (unsigned char*) title);
+
+			glPopMatrix();
+			glTranslatef(0, 2*glutStrokeHeight(FONT)*blockScale, 0);
+		}
 
 		glTranslatef(blockPadding, blockPadding, 0);
 		glScalef(blockScale, -blockScale, blockScale);
@@ -158,11 +183,11 @@ static void cb_displayFunc()
 		else
 			glColor4f(1, 1, 1, 1);
 
-		expr_t* fun = funList->f[i].expr;
-		if (fun == NULL)
+		function_t* f = funList->f + i;
+		if (f->expr == NULL)
 			continue; // TODO
 		char glText[BUFSIZE];
-		snprintf(glText, BUFSIZE, "%s\n", fun->label);
+		snprintf(glText, BUFSIZE, "%s\n", f->name);
 		glutStrokeString(FONT, (unsigned char*) glText);
 	}
 	glPopMatrix();

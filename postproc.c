@@ -114,11 +114,12 @@ void post_funs(flist_t* dst, elist_t* l, elf_t* elf)
 		if (e->isFun)
 		{
 			flist_push(&tmp_fl, o, e);
-			if (e->label == NULL)
-			{
-				if (o == mainAddr)
-					e->label = "main";
-			}
+// TODO
+//			if (e->label == NULL)
+//			{
+//				if (o == mainAddr)
+//					e->label = "main";
+//			}
 			if (i)
 			{
 				l->e[i-1].e->next = NULL;
@@ -285,7 +286,6 @@ static void post_simpl_aux1(expr_t* e)
 		expr_t* b = e->v.bin.b; post_simpl_aux1(b);
 		if (e_cmp(a, b) == 0)
 		{
-			free(e->label);
 			e_del(b, false);
 			memcpy(e, a, sizeof(expr_t));
 		}

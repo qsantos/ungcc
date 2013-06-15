@@ -204,7 +204,6 @@ void read_file(elist_t* dst, elf_t* elf, FILE* f)
 {
 	elist_new(dst);
 
-	char*   label  = NULL;
 	char*   line   = NULL;
 	size_t  n_line = 0;
 	while (1)
@@ -213,16 +212,6 @@ void read_file(elist_t* dst, elf_t* elf, FILE* f)
 		if (feof(f))
 			break;
 		line[n_read-1] = 0;
-
-		// label
-		if (line[0] == '0')
-		{
-			label = strchr(line, '<')+1;
-			char* end = strchr(label , '>');
-			*end = 0;
-			label = strdup(label);
-			continue;
-		}
 
 		// not instruction
 		if (line[0] != ' ')
@@ -239,14 +228,7 @@ void read_file(elist_t* dst, elf_t* elf, FILE* f)
 		part = strtok(NULL, "\t"); // assembly code
 		if (!part) continue;
 
-		size_t cur = dst->n;
 		read_instr(dst, offset, elf, part);
-		// adds label to first added instruction
-		if (cur < dst->n)
-		{
-			dst->e[cur].e->label = label;
-			label = NULL;
-		}
 	}
 
 	free(line);
