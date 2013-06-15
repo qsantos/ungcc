@@ -1,14 +1,16 @@
 #ifndef FUNCTION_H
 #define FUNCTION_H
 
+typedef struct function function_t;
+
 #include "expr.h"
 
-typedef struct
+struct function
 {
 	size_t  address;
 	char*   name;
 	expr_t* expr;
-} function_t;
+};
 
 void f_new(function_t* f, size_t address, expr_t* expr);
 void f_del(function_t* f);

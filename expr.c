@@ -29,7 +29,7 @@ void e_del(expr_t* e, bool keep)
 	case E_REG:
 		break;
 	case E_IM:
-		free(e->v.im.symbol);
+		free(e->v.im.str);
 		break;
 	case E_ADDR:
 		break;
@@ -201,9 +201,10 @@ expr_t* e_reg(rtype_t reg)
 expr_t* e_im(ssize_t im)
 {
 	expr_t* ret = e_new();
-	ret->type        = E_IM;
-	ret->v.im.v      = im;
-	ret->v.im.symbol = NULL;
+	ret->type     = E_IM;
+	ret->v.im.v   = im;
+	ret->v.im.sym = NULL;
+	ret->v.im.str = NULL;
 	return ret;
 }
 

@@ -91,9 +91,10 @@ size_t print_expr(char* str, size_t size, expr_t* e)
 	case E_IM:
 	{
 		size_t v = e->v.im.v;
-		char*  s = e->v.im.symbol;
-		if (s)
-			PRTCHK(snprintf, "%s", s)
+		if (e->v.im.sym && e->v.im.sym->name)
+			PRTCHK(snprintf, "%s", e->v.im.sym->name)
+		else if (e->v.im.str)
+			PRTCHK(snprintf, "\"%s\"", e->v.im.str)
 		else if (0x1f < v && v < 0x7f)
 			PRTCHK(snprintf, "'%c'", v)
 		else if (v < 0x8048000)
@@ -204,15 +205,12 @@ For reminder, the context looks like:
 		break;
 
 	case E_JMP:
-		if (e->branch && e->branch->isFun)
-			PRTCHK(snprintf, "-> %s()", e->branch->label)
-		else
-		{
-			expr_t* a = e->v.bin.a;
-			if (a->type == E_IM && a->v.im.symbol)
-				PRTCHK(snprintf, "-> %s()", a->v.im.symbol)
-		}
+	{
+		expr_t* a = e->v.bin.a;
+		if (a->type == E_IM && a->v.im.sym)
+			PRTCHK(snprintf, "-> %s()", a->v.im.sym->name)
 		break;
+	}
 
 	PRINT_EXPR2(E_ADD,  "+");
 	PRINT_EXPR2(E_SUB,  "-");

@@ -141,7 +141,6 @@ char* elf_str(elf_t* elf, size_t addr)
 	size_t n   = 0;
 	size_t a   = 1;
 
-	ADDCH('"');
 	char c;
 	while (read(fd, &c, 1) && c)
 		if      (c == '\n') {ADDCH('\\'); ADDCH('n');}
@@ -149,7 +148,6 @@ char* elf_str(elf_t* elf, size_t addr)
 		else if (c == '\t') {ADDCH('\\'); ADDCH('t');}
 		else                 ADDCH(c)
 
-	ADDCH('"');
 	ADDCH(0);
 	return ret;
 }

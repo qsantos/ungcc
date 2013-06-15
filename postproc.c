@@ -159,7 +159,6 @@ void post_funs(flist_t* dst, elist_t* l, elf_t* elf)
 	}
 	flist_del(&tmp_fl);
 
-	// TODO: this is a quickfix
 	// assigns function symbols to calls and jumps
 	for (size_t i = 0; i < l->n; i++)
 	{
@@ -181,12 +180,7 @@ void post_funs(flist_t* dst, elist_t* l, elf_t* elf)
 		if (b->type != E_IM)
 			continue;
 
-		size_t addr = b->v.im.v;
-		function_t* f = flist_find(dst, addr);
-		if (f == NULL)
-			continue;
-
-		b->v.im.symbol = f->name;
+		b->v.im.sym = flist_find(dst, b->v.im.v);
 	}
 }
 
@@ -304,8 +298,9 @@ static void post_simpl_aux1(expr_t* e)
 		if (e_cmp(a, b) == 0)
 		{
 			e->type = E_IM;
-			e->v.im.v = 0;
-			e->v.im.symbol = NULL;
+			e->v.im.v   = 0;
+			e->v.im.sym = NULL;
+			e->v.im.str = NULL;
 			e_del(a, false);
 			e_del(b, false);
 		}

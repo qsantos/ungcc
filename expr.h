@@ -4,8 +4,9 @@
 #include <sys/types.h>
 #include <stdbool.h>
 
-// recursive structure
 typedef struct expr expr_t;
+
+#include "flist.h"
 
 // register
 typedef enum
@@ -33,8 +34,9 @@ typedef struct
 // immediate value
 typedef struct
 {
-	ssize_t v;
-	char*   symbol;
+	ssize_t     v;   // actual value
+	function_t* sym; // symbol information
+	char*       str; // string value
 } im_t;
 // indirect addressing
 typedef struct
