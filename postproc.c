@@ -4,16 +4,7 @@
 #include <string.h>
 
 #include "print.h"
-
-static const function_t fctInfo[] =
-{
-	// name,   returns, argc,  fast,  0, NULL
-	{ "exit",    false,    1, false,  0, NULL },
-	{ "abort",   false,    0, false,  0, NULL },
-
-	// end of array
-	{ NULL,      false,    0, false,  0, NULL },
-};
+#include "libc.h"
 
 static bool doesReturn(expr_t* e)
 {
