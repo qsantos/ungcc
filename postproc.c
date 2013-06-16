@@ -34,11 +34,11 @@ static bool doesReturn(expr_t* e)
 
 	if (e->type == E_CALL)
 	{
-		expr_t* a = e->v.uni.a;
-		if (a && a->type == E_IM)
+		expr_t* f = e->v.call.f;
+		if (f->type == E_IM)
 		{
-			function_t* f = a->v.im.sym;
-			if (f && !f->returns)
+			function_t* sym = f->v.im.sym;
+			if (sym && !sym->returns)
 				return false;
 		}
 	}
@@ -51,20 +51,20 @@ static void breakNonReturning(expr_t* e)
 		return;
 	e->visited = true;
 
-	expr_t* b = NULL;
+	expr_t* f = NULL;
 	if (e->type == E_JMP)
-		b = e->v.bin.a;
+		f = e->v.bin.a;
 	else if (e->type == E_MOV)
 	{
 		expr_t* a = e->v.bin.b;
 		if (a->type == E_CALL)
-			b = a->v.uni.a;
+			f = a->v.call.f;
 	}
 
-	if (b && b->type == E_IM)
+	if (f && f->type == E_IM)
 	{
-		function_t* f = b->v.im.sym;
-		if (f && !f->returns)
+		function_t* sym = f->v.im.sym;
+		if (sym && !sym->returns)
 		{
 			e->next = NULL;
 			e->endBlck = true;
@@ -152,15 +152,15 @@ void post_funs(flist_t* dst, elist_t* l, elf_t* elf)
 		if (a->type != E_CALL)
 			continue;
 
-		expr_t* b = a->v.uni.a;
-		if (b->type != E_IM)
+		expr_t* f = a->v.call.f;
+		if (f->type != E_IM)
 		{
 			fprintf(stderr, "Unsupported instruction at %#x: ", l->e[i].o);
 			fprint_stat(stderr, a);
 			continue;
 		}
 
-		size_t address = b->v.im.v;
+		size_t address = f->v.im.v;
 		eopair_t* p = elist_at(l, address);
 		if (p)
 		{
@@ -234,33 +234,30 @@ void post_funs(flist_t* dst, elist_t* l, elf_t* elf)
 	{
 		expr_t* e = l->e[i].e;
 
-		expr_t* b;
+		expr_t* f = NULL;
 		if (e->type == E_JMP)
-			b = e->v.bin.a;
+			f = e->v.bin.a;
 		else if (e->type == E_MOV)
 		{
 			expr_t* a = e->v.bin.b;
-			if (a->type != E_CALL)
-				continue;
-			b = a->v.uni.a;
+			if (a->type == E_CALL)
+				f = a->v.call.f;
 		}
-		else
+
+		if (f == NULL || f->type != E_IM)
 			continue;
 
-		if (b->type != E_IM)
+		function_t* sym = flist_find(dst, f->v.im.v);
+
+		if (sym == NULL)
 			continue;
 
-		function_t* f = flist_find(dst, b->v.im.v);
-
-		if (f == NULL)
-			continue;
-
-		b->v.im.sym = f;
+		f->v.im.sym = sym;
 
 		// checks if the function is a known non-returning one
 		for (size_t i = 0; nonreturning[i]; i++)
-			if (strcmp(f->name, nonreturning[i]) == 0)
-				f->returns = false;
+			if (strcmp(sym->name, nonreturning[i]) == 0)
+				sym->returns = false;
 	}
 
 	// detects non-returning functions
@@ -364,9 +361,14 @@ static void post_simpl_aux1(expr_t* e)
 
 	switch (e->type)
 	{
+	// function call
+	case E_CALL:
+		post_simpl_aux1(e->v.call.f);
+		for (size_t i = 0; i < e->v.call.argc; i++)
+			post_simpl_aux1(e->v.call.argv[i]);
+
 	// unary
 	case E_PUSH: case E_POP:
-	case E_CALL:
 	case E_NOT:  case E_NEG:
 		post_simpl_aux1(e->v.uni.a);
 		break;
@@ -491,9 +493,14 @@ static void post_reduc_aux1(expr_t* r, expr_t* e, expr_t** last)
 		break;
 	}
 
+	// function call
+	case E_CALL:
+		post_reduc_aux1(r, e->v.call.f, last);
+		for (size_t i = 0; i < e->v.call.argc; i++)
+			post_reduc_aux1(r, e->v.call.argv[i], last);
+
 	// unary
 	case E_PUSH: case E_POP:
-	case E_CALL:
 	case E_NOT:  case E_NEG:
 		post_reduc_aux1(r, e->v.uni.a, last);
 		break;

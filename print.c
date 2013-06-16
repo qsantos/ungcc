@@ -188,14 +188,15 @@ For reminder, the context looks like:
 	PRINT_EXPR0(E_RET, "ret");
 	PRINT_EXPR0(E_HLT, "hlt");
 
+	// function call
+	case E_CALL:
+		PRTCHK(print_expr, e->v.call.f);
+		PRTCHK(snprintf, "()");
+		break;
+
 	// unary
 	PRINT_EXPR1(E_PUSH, "push"); PRINT_EXPR1(E_POP, "pop");
 	PRINT_EXPR1(E_NOT,  "!");    PRINT_EXPR1(E_NEG, "~");
-
-	case E_CALL:
-		PRTCHK(print_expr, e->v.bin.a);
-		PRTCHK(snprintf, "()");
-		break;
 
 	// binary
 	case E_JXX:

@@ -39,9 +39,15 @@ void e_del(expr_t* e, bool keep)
 	case E_HLT:
 		break;
 
+	// function call
+	case E_CALL:
+		e_del(e->v.call.f, false);
+		for (size_t i = 0; i < e->v.call.argc; i++)
+			e_del(e->v.call.argv[i], false);
+		break;
+
 	// unary
 	case E_PUSH: case E_POP:
-	case E_CALL:
 	case E_NOT:  case E_NEG:
 		e_del(e->v.uni.a, false);
 		break;
@@ -82,7 +88,8 @@ expr_t* e_cpy(expr_t* e)
 		ret->v.reg.last = e->v.reg.last;
 		break;
 	case E_IM:
-		ret->v.im.v = e->v.im.v;
+		ret->v.im.v   = e->v.im.v;
+		ret->v.im.sym = e->v.im.sym;
 		break;
 	case E_ADDR:
 		ret->v.addr.base  = e->v.addr.base;
@@ -96,9 +103,17 @@ expr_t* e_cpy(expr_t* e)
 	case E_HLT:
 		break;
 
+	// function call
+	case E_CALL:
+		ret->v.call.f = e_cpy(e->v.call.f);
+		size_t argc = e->v.call.argc;
+		ret->v.call.argc = argc;
+		ret->v.call.argv = (expr_t**) malloc(argc * sizeof(expr_t*));
+		memcpy(ret->v.call.argv, e->v.call.argv, argc * sizeof(expr_t*));
+		break;
+
 	// unary
 	case E_PUSH: case E_POP:
-	case E_CALL:
 	case E_NOT:  case E_NEG:
 		ret->v.uni.a = e_cpy(e->v.uni.a);
 		break;
@@ -160,9 +175,22 @@ int e_cmp(expr_t* a, expr_t* b)
 	case E_RET:
 	case E_HLT:
 		return 0;
+
+	// function call
+	case E_CALL:
+		if (e_cmp(a->v.call.f, b->v.call.f))
+			return 1;
+		size_t argc = a->v.call.argc;
+		if (argc != b->v.call.argc)
+			return 1;
+		for (size_t i = 0; i < argc; i++)
+			if (e_cmp(a->v.call.argv[i], b->v.call.argv[i]))
+				return 1;
+		break;
+
+// TODO
 	// unary
 	CMP1(E_PUSH); CMP1(E_POP);
-	CMP1(E_CALL);
 	CMP1(E_NOT);  CMP1(E_NEG);
 
 	// binary
@@ -230,6 +258,16 @@ E_ZER(nop, E_NOP)
 E_ZER(ret, E_RET)
 E_ZER(hlt, E_HLT)
 
+expr_t* e_call(expr_t* a)
+{
+	expr_t* ret = e_new();
+	ret->type = E_CALL;
+	ret->v.call.f    = a;
+	ret->v.call.argc = 0;
+	ret->v.call.argv = NULL;
+	return ret;
+}
+
 // unary
 #define E_UNI(N, T) expr_t* e_##N(expr_t* a) \
 { \
@@ -239,7 +277,6 @@ E_ZER(hlt, E_HLT)
 	return ret; \
 }
 E_UNI(push, E_PUSH) E_UNI(pop, E_POP)
-E_UNI(call, E_CALL)
 E_UNI(not , E_NOT ) E_UNI(neg, E_NEG)
 
 // binary

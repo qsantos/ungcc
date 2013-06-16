@@ -46,6 +46,13 @@ typedef struct
 	size_t  scale; // scale factor
 	ssize_t disp;  // displacement
 } addr_t;
+// function call
+typedef struct
+{
+	expr_t*  f; // function address
+	size_t   argc; // argument count
+	expr_t** argv; // argument values
+} call_t;
 // unary
 typedef struct
 {
@@ -80,10 +87,12 @@ typedef enum
 	// zeroary
 	E_NOP,  E_RET, E_HLT,
 
+	// function call
+	E_CALL,
+
 	// unary
-	E_PUSH, E_POP,           // statments
-	E_CALL,                  // function call
-	E_NOT,  E_NEG,           // expressions
+	E_PUSH, E_POP, // statments
+	E_NOT,  E_NEG, // expressions
 
 	// binary
 	E_JMP,  E_JXX,                      // jumps (JMP ignores 'b')
@@ -104,6 +113,7 @@ struct expr
 		reg_t  reg;
 		im_t   im;
 		addr_t addr;
+		call_t call;
 		uni_t  uni;
 		bin_t  bin;
 		test_t test;
@@ -143,13 +153,15 @@ expr_t* e_nop();
 expr_t* e_ret();
 expr_t* e_hlt();
 
+// function call
+expr_t* e_call(expr_t* a);
+
 // unary
 expr_t* e_push(expr_t* a); expr_t* e_pop(expr_t* a);
 expr_t* e_je  (expr_t* a); expr_t* e_jne(expr_t* a);
 expr_t* e_js  (expr_t* a); expr_t* e_jns(expr_t* a);
 expr_t* e_ja  (expr_t* a); expr_t* e_jae(expr_t* a);
 expr_t* e_jb  (expr_t* a); expr_t* e_jbe(expr_t* a);
-expr_t* e_call(expr_t* a);
 expr_t* e_not (expr_t* a); expr_t* e_neg(expr_t* b);
 
 // binary
