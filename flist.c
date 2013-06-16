@@ -7,6 +7,7 @@ void f_new(function_t* f, size_t address, expr_t* expr)
 	f->address = address;
 	f->name    = NULL;
 	f->expr    = expr;
+	f->returns = true;
 }
 
 void f_del(function_t* f)
@@ -46,7 +47,7 @@ void flist_sort(flist_t* l)
 
 function_t* flist_find(flist_t* l, size_t address)
 {
-	function_t key = {address, NULL, NULL};
+	function_t key = {address, NULL, NULL, true};
 	return bsearch(&key, l->f, l->n, sizeof(function_t), f_cmp);
 }
 

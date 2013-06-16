@@ -5,6 +5,75 @@
 
 #include "print.h"
 
+static const char* nonreturning[] =
+{
+	"exit",
+	"abort",
+	NULL,
+};
+
+static bool doesReturn(expr_t* e)
+{
+	if (e == NULL || e->visited)
+		return false;
+	e->visited = true;
+
+	if (e->type == E_RET)
+		return true;
+	
+	if (e->type == E_JMP)
+	{
+		expr_t* a = e->v.bin.a;
+		if (a && a->type == E_IM)
+		{
+			function_t* f = a->v.im.sym;
+			if (f)
+				return f->returns;
+		}
+	}
+
+	if (e->type == E_CALL)
+	{
+		expr_t* a = e->v.uni.a;
+		if (a && a->type == E_IM)
+		{
+			function_t* f = a->v.im.sym;
+			if (f && !f->returns)
+				return false;
+		}
+	}
+
+	return doesReturn(e->next) || doesReturn(e->branch);
+}
+static void breakNonReturning(expr_t* e)
+{
+	if (e == NULL || e->visited)
+		return;
+	e->visited = true;
+
+	expr_t* b = NULL;
+	if (e->type == E_JMP)
+		b = e->v.bin.a;
+	else if (e->type == E_MOV)
+	{
+		expr_t* a = e->v.bin.b;
+		if (a->type == E_CALL)
+			b = a->v.uni.a;
+	}
+
+	if (b && b->type == E_IM)
+	{
+		function_t* f = b->v.im.sym;
+		if (f && !f->returns)
+		{
+			e->next = NULL;
+			e->endBlck = true;
+		}
+	}
+
+	breakNonReturning(e->next);
+	breakNonReturning(e->branch);
+}
 void post_funs(flist_t* dst, elist_t* l, elf_t* elf)
 {
 	// builds hierarchy
@@ -181,10 +250,42 @@ void post_funs(flist_t* dst, elist_t* l, elf_t* elf)
 		if (b->type != E_IM)
 			continue;
 
-		b->v.im.sym = flist_find(dst, b->v.im.v);
+		function_t* f = flist_find(dst, b->v.im.v);
+
+		if (f == NULL)
+			continue;
+
+		b->v.im.sym = f;
+
+		// checks if the function is a known non-returning one
+		for (size_t i = 0; nonreturning[i]; i++)
+			if (strcmp(f->name, nonreturning[i]) == 0)
+				f->returns = false;
+	}
+
+	// detects non-returning functions
+	for (size_t i = 0; i < 10; i++) // TODO
+		for (size_t i = 0; i < dst->n; i++)
+		{
+			function_t* f = dst->f + i;
+			if (!f)
+				continue;
+			if (f->expr)
+			{
+				e_rstvisited(f->expr);
+				if (!doesReturn(f->expr))
+					f->returns = false;
+			}
+		}
+
+	// breaks next link after a call to a non-returning function
+	for (size_t i = 0; i < dst->n; i++)
+	{
+		expr_t* e = dst->f[i].expr;
+		e_rstvisited(e);
+		breakNonReturning(e);
 	}
 }
-
 
 static bool isContextInit(expr_t* e)
 {

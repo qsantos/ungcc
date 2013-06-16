@@ -10,6 +10,7 @@ struct function
 	size_t  address;
 	char*   name;
 	expr_t* expr;
+	bool    returns;
 };
 
 void f_new(function_t* f, size_t address, expr_t* expr);
