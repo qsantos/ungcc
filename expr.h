@@ -52,6 +52,7 @@ typedef struct
 	expr_t*  f; // function address
 	size_t   argc; // argument count
 	expr_t** argv; // argument values
+	bool     fast; // fast parameter passing
 } call_t;
 // unary
 typedef struct

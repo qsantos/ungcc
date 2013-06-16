@@ -5,11 +5,14 @@
 
 #include "print.h"
 
-static const char* nonreturning[] =
+static const function_t fctInfo[] =
 {
-	"exit",
-	"abort",
-	NULL,
+	// name,   returns, argc,  fast,  0, NULL
+	{ "exit",    false,    1, false,  0, NULL },
+	{ "abort",   false,    0, false,  0, NULL },
+
+	// end of array
+	{ NULL,      false,    0, false,  0, NULL },
 };
 
 static bool doesReturn(expr_t* e)
@@ -211,18 +214,36 @@ void post_funs(flist_t* dst, elist_t* l, elf_t* elf)
 			continue;
 		last_addr = addr;
 
+		// new function symbol
 		fun = flist_push(dst, addr, fun->expr);
+
+		// TODO
 		if (fun->name)
 			continue;
 
+		// from the PLT solving (external)
 		fun->name = elf_plt(elf, addr);
 		if (fun->name)
-			continue;
+		{
+			// if known external, gather information
+			for (size_t i = 0; fctInfo[i].name; i++)
+				if (strcmp(fun->name, fctInfo[i].name) == 0)
+				{
+					fun->returns = fctInfo[i].returns;
+					fun->argc    = fctInfo[i].argc;
+					fun->fast    = fctInfo[i].fast;
+					break;
+				}
 
+			continue;
+		}
+
+		// from symbols (local)
 		fun->name = elf_sym(elf, addr);
 		if (fun->name)
 			continue;
 
+		// automatic naming
 		char buf[1024];
 		snprintf(buf, 1024, "fct%u", ++unnamed_idx);
 		fun->name = strdup(buf);
@@ -253,11 +274,6 @@ void post_funs(flist_t* dst, elist_t* l, elf_t* elf)
 			continue;
 
 		f->v.im.sym = sym;
-
-		// checks if the function is a known non-returning one
-		for (size_t i = 0; nonreturning[i]; i++)
-			if (strcmp(sym->name, nonreturning[i]) == 0)
-				sym->returns = false;
 	}
 
 	// detects non-returning functions
@@ -281,6 +297,34 @@ void post_funs(flist_t* dst, elist_t* l, elf_t* elf)
 		expr_t* e = dst->f[i].expr;
 		e_rstvisited(e);
 		breakNonReturning(e);
+	}
+
+	// adds parameters to some function calls
+	for (size_t i = 0; i < l->n; i++)
+	{
+		expr_t* e = l->e[i].e;
+
+		if (e->type != E_MOV)
+			continue;
+
+		expr_t* a = e->v.bin.b;
+		if (a->type != E_CALL)
+			continue;
+
+		expr_t* f = a->v.call.f;
+		if (f->type != E_IM)
+			continue;
+
+		function_t* sym = f->v.im.sym;
+		if (sym->argc)
+		{
+			a->v.call.argc = sym->argc;
+			a->v.call.argv = malloc(sym->argc * sizeof(expr_t*));
+
+			a->v.call.argv[0] = sym->fast ? e_reg(R_AX) : e_addr(R_SP, 0, 0, 0);
+			for (size_t i = 1; i < sym->argc; i++)
+				a->v.call.argv[i] = e_addr(R_SP, 0, 0, 4*i);
+		}
 	}
 }
 

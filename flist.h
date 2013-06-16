@@ -7,10 +7,15 @@ typedef struct function function_t;
 
 struct function
 {
-	size_t  address;
+	// 'fixed' information
 	char*   name;
-	expr_t* expr;
 	bool    returns;
+	size_t  argc;
+	bool    fast; // fast parameter passing (eax)
+
+	// 'variable' information
+	size_t  address;
+	expr_t* expr;
 };
 
 void f_new(function_t* f, size_t address, expr_t* expr);

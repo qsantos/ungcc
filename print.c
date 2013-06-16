@@ -191,7 +191,15 @@ For reminder, the context looks like:
 	// function call
 	case E_CALL:
 		PRTCHK(print_expr, e->v.call.f);
-		PRTCHK(snprintf, "()");
+		PRTCHK(snprintf, "(");
+		size_t argc = e->v.call.argc;
+		for (size_t i = 0; i < argc; i++)
+		{
+			PRTCHK(print_expr, e->v.call.argv[i])
+			if (i+1 < argc)
+				PRTCHK(snprintf, ", ")
+		}
+		PRTCHK(snprintf, ")");
 		break;
 
 	// unary

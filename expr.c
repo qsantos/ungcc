@@ -265,6 +265,7 @@ expr_t* e_call(expr_t* a)
 	ret->v.call.f    = a;
 	ret->v.call.argc = 0;
 	ret->v.call.argv = NULL;
+	ret->v.call.fast = false;
 	return ret;
 }
 
