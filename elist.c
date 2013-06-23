@@ -1,5 +1,5 @@
 /*\
- *  This is an awesome programm simulating awesome battles of awesome robot tanks
+ *  Binary analyzer for decompilation and forensics
  *  Copyright (C) 2013  Quentin SANTOS
  *
  *  This program is free software: you can redistribute it and/or modify
