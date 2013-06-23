@@ -1,3 +1,24 @@
+#!/bin/bash
+for i in $(find -name "*.[hc]")
+do
+	exec > tmp
+
+	# new header (end of this script)
+	tail -n17 $0
+	echo ""
+
+	# length of the old header
+	line=`grep -Enm1 '^\\\\\*/$' $i`
+	line=${line%%:\\*/}
+	line=${line:--1}
+	line=$(($line+1))
+
+	# skip the old header
+	tail $i -n+$line
+
+	mv tmp $i
+done
+exit 0
 /*\
  *  This is an awesome programm simulating awesome battles of awesome robot tanks
  *  Copyright (C) 2013  Quentin SANTOS
@@ -15,16 +36,3 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 \*/
-
-#ifndef PARSER_H
-#define PARSER_H
-
-#include "elist.h"
-#include "elf.h"
-
-char* read_register(rtype_t* dst, size_t* sz, elf_t* elf, char* str);
-char* read_operand (expr_t** dst, size_t* sz, elf_t* elf, char* str);
-void  read_instr   (elist_t* dst, size_t  of, elf_t* elf, char* str);
-void  read_file    (elist_t* dst,             elf_t* elf, FILE* f);
-
-#endif
