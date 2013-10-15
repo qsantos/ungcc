@@ -33,7 +33,7 @@ void elist_del(elist_t* l)
 	free(l->e);
 }
 
-void elist_push(elist_t* l, size_t o, expr_t* e)
+void elist_push(elist_t* l, address_t o, expr_t* e)
 {
 	if (l->n == l->a)
 	{
@@ -54,7 +54,7 @@ static int eopair_cmp(const void* a, const void* b)
 	if (eoa->o > eob->o) return  1;
 	                     return  0;
 }
-eopair_t* elist_at(elist_t* l, size_t o)
+eopair_t* elist_at(elist_t* l, address_t o)
 {
 	eopair_t key = {o, NULL};
 	return bsearch(&key, l->e, l->n, sizeof(eopair_t), eopair_cmp);

@@ -104,7 +104,7 @@ void post_funs(flist_t* dst, elist_t* l, elf_t* elf)
 		expr_t* a = e->v.bin.a;
 		if (a->type != E_IM)
 		{
-			fprintf(stderr, "Unsupported instruction at %#x: ", l->e[i].o);
+			fprintf(stderr, "Unsupported instruction at %#llx: ", l->e[i].o);
 			fprint_stat(stderr, e);
 			continue;
 		}
@@ -112,7 +112,7 @@ void post_funs(flist_t* dst, elist_t* l, elf_t* elf)
 		eopair_t* p = elist_at(l, a->v.im.v);
 		if (!p)
 		{
-			fprintf(stderr, "Unknown offset %#x\n", a->v.im.v);
+			fprintf(stderr, "Unknown offset %#llx\n", a->v.im.v);
 			continue;
 		}
 
@@ -122,10 +122,10 @@ void post_funs(flist_t* dst, elist_t* l, elf_t* elf)
 	}
 
 	// finds _start()
-	size_t entryPoint = elf_entry(elf);
+	address_t entryPoint = elf_entry(elf);
 	eopair_t* p = elist_at(l, entryPoint);
 	if (!p)
-		fprintf(stderr, "No such instruction: %#x\n\n", entryPoint);
+		fprintf(stderr, "No such instruction: %#llx\n\n", entryPoint);
 	p->e->isFun = true;
 
 	// finds main() address, right before the call to __libc_start_main@plt
@@ -138,13 +138,13 @@ void post_funs(flist_t* dst, elist_t* l, elf_t* elf)
 		fprint_stat(stderr, p->e);
 		exit(1);
 	}
-	size_t mainAddr = a->v.im.v;
+	address_t mainAddr = a->v.im.v;
 
 	// marks main() as a function
 	p = elist_at(l, mainAddr);
 	if (!p)
 	{
-		fprintf(stderr, "Could not find main() at address %#x\n", mainAddr);
+		fprintf(stderr, "Could not find main() at address %#llx\n", mainAddr);
 		exit(1);
 	}
 	p->e->isFun = true;
@@ -167,12 +167,12 @@ void post_funs(flist_t* dst, elist_t* l, elf_t* elf)
 		expr_t* f = a->v.call.f;
 		if (f->type != E_IM)
 		{
-			fprintf(stderr, "Unsupported instruction at %#x: ", l->e[i].o);
+			fprintf(stderr, "Unsupported instruction at %#llx: ", l->e[i].o);
 			fprint_stat(stderr, a);
 			continue;
 		}
 
-		size_t address = f->v.im.v;
+		address_t address = f->v.im.v;
 		eopair_t* p = elist_at(l, address);
 		if (p)
 		{
@@ -190,8 +190,8 @@ void post_funs(flist_t* dst, elist_t* l, elf_t* elf)
 	// lists local functions
 	for (size_t i = 0; i < l->n; i++)
 	{
-		expr_t* e = l->e[i].e;
-		size_t  o = l->e[i].o;
+		expr_t*   e = l->e[i].e;
+		address_t o = l->e[i].o;
 		if (e->isFun)
 		{
 			flist_push(&tmp_fl, o, e);
@@ -212,8 +212,8 @@ void post_funs(flist_t* dst, elist_t* l, elf_t* elf)
 	// now extract sorted and named uniq function symbols
 	flist_sort(&tmp_fl);
 	flist_new(dst);
-	size_t last_addr = 0;
-	size_t unnamed_idx = 0;
+	address_t last_addr = 0;
+	unsigned int unnamed_idx = 0;
 	for (size_t i = 0; i < tmp_fl.n; i++)
 	{
 		function_t* fun = tmp_fl.f + i;
@@ -470,7 +470,7 @@ static void post_simpl_aux1(expr_t* e)
 		{
 			expr_reg_type_t base  = b->v.addr.base;
 			expr_reg_type_t idx   = b->v.addr.idx;
-			size_t  scale = b->v.addr.scale;
+			value_t         scale = b->v.addr.scale;
 
 			e->type = E_MOV;
 			if (idx == base)

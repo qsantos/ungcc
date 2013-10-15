@@ -24,6 +24,13 @@
 
 typedef struct expr expr_t;
 
+// some basic types
+#ifndef ELF_H // TODO
+typedef unsigned long long address_t;
+typedef   signed long long offset_t;
+typedef   signed long long value_t;
+#endif
+
 #include "flist.h"
 
 // register
@@ -52,7 +59,7 @@ typedef struct
 // immediate value
 typedef struct
 {
-	ssize_t     v;   // actual value
+	value_t     v;   // actual value
 	function_t* sym; // symbol information
 	char*       str; // string value
 } expr_im_t;
@@ -61,8 +68,8 @@ typedef struct
 {
 	expr_reg_type_t base;  // base register
 	expr_reg_type_t idx;   // index register
-	size_t     scale; // scale factor
-	ssize_t    disp;  // displacement
+	value_t    scale; // scale factor
+	value_t    disp;  // displacement
 } expr_addr_t;
 // function call
 typedef struct
@@ -145,7 +152,7 @@ struct expr
 	expr_t* branch;
 
 	// for MOV: number of uses of this reg affectation
-	size_t used;
+	unsigned int used;
 
 	bool visited;
 };
@@ -164,8 +171,8 @@ expr_t* e_unk(char* comment);
 
 // register, immediate, address
 expr_t* e_reg (expr_reg_type_t reg);
-expr_t* e_im  (ssize_t im);
-expr_t* e_addr(expr_reg_type_t base, expr_reg_type_t idx, size_t scale, ssize_t disp);
+expr_t* e_im  (value_t         im);
+expr_t* e_addr(expr_reg_type_t base, expr_reg_type_t idx, value_t scale, value_t disp);
 
 // zeroary
 expr_t* e_nop();

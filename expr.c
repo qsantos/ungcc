@@ -243,7 +243,7 @@ expr_t* e_reg(expr_reg_type_t reg)
 }
 
 // immediate
-expr_t* e_im(ssize_t im)
+expr_t* e_im(value_t im)
 {
 	expr_t* ret = e_new();
 	ret->type     = E_IM;
@@ -254,7 +254,7 @@ expr_t* e_im(ssize_t im)
 }
 
 // address
-expr_t* e_addr(expr_reg_type_t base, expr_reg_type_t idx, size_t scale, ssize_t disp)
+expr_t* e_addr(expr_reg_type_t base, expr_reg_type_t idx, value_t scale, value_t disp)
 {
 	expr_t* ret = e_new();
 	ret->type         = E_ADDR;

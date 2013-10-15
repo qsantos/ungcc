@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-char* read_register(expr_reg_type_t* dst, size_t* sz, elf_t* elf, char* str)
+char* read_register(expr_reg_type_t* dst, int* sz, elf_t* elf, char* str)
 {
 	(void) elf;
 
@@ -67,7 +67,7 @@ char* read_register(expr_reg_type_t* dst, size_t* sz, elf_t* elf, char* str)
 	return str+2;
 }
 
-char* read_operand(expr_t** dst, size_t* sz, elf_t* elf, char* str)
+char* read_operand(expr_t** dst, int* sz, elf_t* elf, char* str)
 {
 	if (str[0] == '%') // register
 	{
@@ -78,14 +78,14 @@ char* read_operand(expr_t** dst, size_t* sz, elf_t* elf, char* str)
 	}
 	else if (str[0] == '$') // immediate
 	{
-		size_t im = strtoul(str+1, (char**) &str, 16);
+		value_t im = strtoul(str+1, (char**) &str, 16);
 		*dst = e_im(im);
 		(*dst)->v.im.str = elf_str(elf, im); // TODO
 		return str;
 	}
 	else if ('0' <= str[0] && str[0] <= '9' && str[1] != 'x') // immediate address
 	{
-		size_t im = strtoul(str, (char**) &str, 16);
+		value_t im = strtoul(str, (char**) &str, 16);
 		*dst = e_im(im);
 		return str;
 	}
@@ -103,7 +103,7 @@ char* read_operand(expr_t** dst, size_t* sz, elf_t* elf, char* str)
 		return str;
 	}
 
-	ssize_t disp = strtoul(str, (char**) &str, 16);
+	value_t disp = strtoul(str, (char**) &str, 16);
 
 	if (str[0] != '(')
 	{
@@ -126,7 +126,7 @@ char* read_operand(expr_t** dst, size_t* sz, elf_t* elf, char* str)
 	expr_reg_type_t idx;
 	str = read_register(&idx, NULL, elf, str+1);
 	str++; // ','
-	size_t scale = strtoul(str, (char**) &str, 10);
+	value_t scale = strtoul(str, (char**) &str, 10);
 
 	*dst = e_addr(base, idx, scale, disp);
 	return str+1; // ')'
@@ -147,7 +147,7 @@ char* read_operand(expr_t** dst, size_t* sz, elf_t* elf, char* str)
 #define BIN_F(N,T) if(strcmp(opcode,N)==0||strcmp(opcode,N"l")==0||strcmp(opcode,N"b")==0)\
 	{elist_push(dst,of,e_mov(e_cpy(b),T(b,a))); return;}
 
-void read_instr(elist_t* dst, size_t of, elf_t* elf, char* str)
+void read_instr(elist_t* dst, address_t of, elf_t* elf, char* str)
 {
 	const char* opcode = str;
 	while (*str && *str != ' ') str++; // skip the opcode
@@ -226,7 +226,7 @@ void read_file(elist_t* dst, elf_t* elf, FILE* f)
 	size_t  n_line = 0;
 	while (1)
 	{
-		size_t n_read = getline(&line, &n_line, f);
+		ssize_t n_read = getline(&line, &n_line, f);
 		if (feof(f))
 			break;
 		line[n_read-1] = 0;
@@ -238,7 +238,7 @@ void read_file(elist_t* dst, elf_t* elf, FILE* f)
 		char* part;
 		part = strtok(line, "\t"); // address
 		if (!part) continue;
-		size_t offset = strtoul(part, NULL, 16);
+		address_t offset = strtoul(part, NULL, 16);
 
 		part = strtok(NULL, "\t"); // hexadecimal value
 		if (!part) continue;

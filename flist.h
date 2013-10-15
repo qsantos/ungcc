@@ -32,11 +32,11 @@ struct function
 	bool    fast; // fast parameter passing (eax)
 
 	// 'variable' information
-	size_t  address;
-	expr_t* expr;
+	address_t address;
+	expr_t*   expr;
 };
 
-void f_new(function_t* f, size_t address, expr_t* expr);
+void f_new(function_t* f, address_t address, expr_t* expr);
 void f_del(function_t* f);
 
 typedef struct
@@ -50,7 +50,7 @@ void flist_new(flist_t* l);
 void flist_del(flist_t* l);
 
 void        flist_sort(flist_t* l);
-function_t* flist_find(flist_t* l, size_t address);
-function_t* flist_push(flist_t* l, size_t address, expr_t* expr);
+function_t* flist_find(flist_t* l, address_t address);
+function_t* flist_push(flist_t* l, address_t address, expr_t* expr);
 
 #endif

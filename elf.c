@@ -137,13 +137,13 @@ void elf_begin(elf_t* elf, int fd)
 	}
 }
 
-size_t elf_entry(elf_t* elf)
+address_t elf_entry(elf_t* elf)
 {
-	return (size_t) elf->hdr.e_entry;
+	return (address_t) elf->hdr.e_entry;
 }
 
 #define ADDCH(C) {if (n == a) { a*=2; ret = realloc(ret, a); } ret[n++] = C;}
-char* elf_str(elf_t* elf, size_t addr)
+char* elf_str(elf_t* elf, address_t addr)
 {
 	int         fd   = elf->fd;
 	Elf32_Shdr* shdr = &elf->rodata;
@@ -170,7 +170,7 @@ char* elf_str(elf_t* elf, size_t addr)
 	return ret;
 }
 
-char* elf_plt(elf_t* elf, size_t addr)
+char* elf_plt(elf_t* elf, address_t addr)
 {
 	int fd = elf->fd;
 
@@ -235,7 +235,7 @@ char* elf_plt(elf_t* elf, size_t addr)
 	return ret;
 }
 
-char* elf_sym(elf_t* elf, size_t addr)
+char* elf_sym(elf_t* elf, address_t addr)
 {
 	int fd = elf->fd;
 

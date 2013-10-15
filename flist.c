@@ -20,7 +20,7 @@
 
 #include <stdlib.h>
 
-void f_new(function_t* f, size_t address, expr_t* expr)
+void f_new(function_t* f, address_t address, expr_t* expr)
 {
 	f->name    = NULL;
 	f->returns = true;
@@ -66,14 +66,14 @@ void flist_sort(flist_t* l)
 	qsort(l->f, l->n, sizeof(function_t), f_cmp);
 }
 
-function_t* flist_find(flist_t* l, size_t address)
+function_t* flist_find(flist_t* l, address_t address)
 {
 	function_t key;
 	key.address = address;
 	return bsearch(&key, l->f, l->n, sizeof(function_t), f_cmp);
 }
 
-function_t* flist_push(flist_t* l, size_t address, expr_t* expr)
+function_t* flist_push(flist_t* l, address_t address, expr_t* expr)
 {
 	if (l->n == l->a)
 	{

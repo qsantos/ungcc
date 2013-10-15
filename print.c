@@ -20,7 +20,7 @@
 
 #define PRTCHK(FCT, ...) {ret+=FCT(str+ret,size-ret,__VA_ARGS__);if(ret>=size)return ret;}
 
-size_t print_reg(char* str, size_t size, expr_reg_type_t reg, size_t s)
+size_t print_reg(char* str, size_t size, expr_reg_type_t reg, int s)
 {
 	size_t ret = 0;
 
@@ -49,20 +49,20 @@ size_t print_reg(char* str, size_t size, expr_reg_type_t reg, size_t s)
 	else if (reg == R_SI) PRTCHK(snprintf, "si")
 	else if (reg == R_DI) PRTCHK(snprintf, "di")
 	else if (reg == R_FL) PRTCHK(snprintf, "fl")
-	else if (R_ST0 <= reg && reg <= R_ST1) PRTCHK(snprintf, "st(%zu)", reg - R_ST0)
+	else if (R_ST0 <= reg && reg <= R_ST1) PRTCHK(snprintf, "st(%u)", reg - R_ST0)
 	else                  PRTCHK(snprintf, "?")
 
 	return ret;
 }
 
-size_t print_hex(char* str, size_t size, ssize_t v)
+size_t print_hex(char* str, size_t size, value_t v)
 {
 	size_t ret = 0;
 
 	if (v < 0)
-		PRTCHK(snprintf, "-%#x", -v)
+		PRTCHK(snprintf, "-%#llx", (unsigned long long) -v)
 	else
-		PRTCHK(snprintf, "%#x", v)
+		PRTCHK(snprintf, "%#llx", (unsigned long long) v)
 
 	return ret;
 }
@@ -108,15 +108,15 @@ size_t print_expr(char* str, size_t size, expr_t* e)
 
 	case E_IM:
 	{
-		size_t v = e->v.im.v;
+		value_t v = e->v.im.v; // TODO
 		if (e->v.im.sym && e->v.im.sym->name)
 			PRTCHK(snprintf, "%s", e->v.im.sym->name)
 		else if (e->v.im.str)
 			PRTCHK(snprintf, "\"%s\"", e->v.im.str)
 		else if (0x1f < v && v < 0x7f)
-			PRTCHK(snprintf, "'%c'", v)
-		else if (v < 0x8048000)
-			PRTCHK(snprintf, "%zi", v)
+			PRTCHK(snprintf, "'%c'", (int) v)
+		else if (v < 0x8048000) // TODO
+			PRTCHK(snprintf, "%lli", v)
 		else
 		{
 			PRTCHK(snprintf, "$");
@@ -159,24 +159,24 @@ For reminder, the context looks like:
 		if (a->base == R_BP)
 		{
 			if (a->disp >= 0) // parameters
-				PRTCHK(snprintf, "param%zu", a->disp - 8) // RA and previous BP pushed on stack
+				PRTCHK(snprintf, "param%lli", a->disp - 8) // RA and previous BP pushed on stack
 			else // local variable
-				PRTCHK(snprintf, "local%zu", -a->disp)
+				PRTCHK(snprintf, "local%lli", -a->disp)
 			if (a->scale)
 			{
 				PRTCHK(snprintf, "[");
 				PRTCHK(print_reg, a->idx, 32);
-				PRTCHK(snprintf, "]_%zu", a->scale);
+				PRTCHK(snprintf, "]_%lli", a->scale);
 			}
 		}
 		else if (a->base == R_SP) // parameters for called function
 		{
-			PRTCHK(snprintf, "nparam%zu", a->disp)
+			PRTCHK(snprintf, "nparam%lli", a->disp)
 			if (a->scale)
 			{
 				PRTCHK(snprintf, "[");
 				PRTCHK(print_reg, a->idx, 32);
-				PRTCHK(snprintf, "]_%zu", a->scale);
+				PRTCHK(snprintf, "]_%lli", a->scale);
 			}
 		}
 		else
@@ -191,7 +191,7 @@ For reminder, the context looks like:
 				{
 					PRTCHK(snprintf, ",");
 					PRTCHK(print_reg, a->idx, 32);
-					PRTCHK(snprintf, ", %u", a->scale);
+					PRTCHK(snprintf, ", %lli", a->scale);
 				}
 				PRTCHK(snprintf, ")");
 			}
@@ -271,7 +271,7 @@ For reminder, the context looks like:
 		break;
 
 	default:
-		PRTCHK(snprintf, "Unknown %zu\n", e->type);
+		PRTCHK(snprintf, "Unknown %u\n", e->type);
 	}
 
 	return ret;
