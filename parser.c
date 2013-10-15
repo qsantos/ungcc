@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-char* read_register(rtype_t* dst, size_t* sz, elf_t* elf, char* str)
+char* read_register(expr_reg_type_t* dst, size_t* sz, elf_t* elf, char* str)
 {
 	(void) elf;
 
@@ -71,7 +71,7 @@ char* read_operand(expr_t** dst, size_t* sz, elf_t* elf, char* str)
 {
 	if (str[0] == '%') // register
 	{
-		rtype_t reg;
+		expr_reg_type_t reg;
 		str = read_register(&reg, sz, elf, str+1);
 		*dst = e_reg(reg);
 		return str;
@@ -97,7 +97,7 @@ char* read_operand(expr_t** dst, size_t* sz, elf_t* elf, char* str)
 	// indirect address
 	if (str[0] == '%')
 	{
-		rtype_t base = 0;
+		expr_reg_type_t base = 0;
 		str = read_register(&base, NULL, elf, str+1);
 		*dst = e_addr(base, 0, 0, 0);
 		return str;
@@ -112,7 +112,7 @@ char* read_operand(expr_t** dst, size_t* sz, elf_t* elf, char* str)
 	}
 	str++;
 
-	rtype_t base = 0;
+	expr_reg_type_t base = 0;
 	if (str[0] == '%')
 		str = read_register(&base, NULL, elf, str+1);
 
@@ -123,7 +123,7 @@ char* read_operand(expr_t** dst, size_t* sz, elf_t* elf, char* str)
 	}
 	str++;
 
-	rtype_t idx;
+	expr_reg_type_t idx;
 	str = read_register(&idx, NULL, elf, str+1);
 	str++; // ','
 	size_t scale = strtoul(str, (char**) &str, 10);

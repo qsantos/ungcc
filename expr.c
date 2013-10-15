@@ -233,7 +233,7 @@ expr_t* e_unk(char* comment)
 }
 
 // register
-expr_t* e_reg(rtype_t reg)
+expr_t* e_reg(expr_reg_type_t reg)
 {
 	expr_t* ret = e_new();
 	ret->type       = E_REG;
@@ -254,7 +254,7 @@ expr_t* e_im(ssize_t im)
 }
 
 // address
-expr_t* e_addr(rtype_t base, rtype_t idx, size_t scale, ssize_t disp)
+expr_t* e_addr(expr_reg_type_t base, expr_reg_type_t idx, size_t scale, ssize_t disp)
 {
 	expr_t* ret = e_new();
 	ret->type         = E_ADDR;
@@ -322,7 +322,7 @@ E_BIN(and , E_AND ) E_BIN(or , E_OR ) E_BIN(xor, E_XOR)
 E_BIN(sar , E_SAR ) E_BIN(sal, E_SAL) E_BIN(shr, E_SHR) E_BIN(shl, E_SHL)
 E_BIN(xchg, E_XCHG) E_BIN(mov, E_MOV) E_BIN(lea, E_LEA)
 
-expr_t* e_test(ttype_t t, expr_t* a)
+expr_t* e_test(expr_test_type_t t, expr_t* a)
 {
 	expr_t* ret = e_new();
 	ret->type = E_TEST;

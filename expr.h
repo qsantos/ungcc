@@ -43,27 +43,27 @@ typedef enum
 	R_ST4, R_ST5, R_ST6, R_ST7,
 
 	N_REG,
-} rtype_t;
+} expr_reg_type_t;
 typedef struct
 {
-	rtype_t t;
-	expr_t* last; // address of last reg affectation
-} reg_t;
+	expr_reg_type_t t;
+	expr_t*    last; // address of last reg affectation
+} expr_reg_t;
 // immediate value
 typedef struct
 {
 	ssize_t     v;   // actual value
 	function_t* sym; // symbol information
 	char*       str; // string value
-} im_t;
+} expr_im_t;
 // indirect addressing
 typedef struct
 {
-	rtype_t base;  // base register
-	rtype_t idx;   // index register
-	size_t  scale; // scale factor
-	ssize_t disp;  // displacement
-} addr_t;
+	expr_reg_type_t base;  // base register
+	expr_reg_type_t idx;   // index register
+	size_t     scale; // scale factor
+	ssize_t    disp;  // displacement
+} expr_addr_t;
 // function call
 typedef struct
 {
@@ -71,29 +71,29 @@ typedef struct
 	size_t   argc; // argument count
 	expr_t** argv; // argument values
 	bool     fast; // fast parameter passing
-} call_t;
+} expr_call_t;
 // unary
 typedef struct
 {
 	expr_t* a;
-} uni_t;
+} expr_uni_t;
 // binary
 typedef struct
 {
 	expr_t* a;
 	expr_t* b;
-} bin_t;
+} expr_bin_t;
 // comparison test
 typedef enum
 {
 	T_E, T_S, T_A, T_B,
 	T_NE,T_NS,T_AE,T_BE,
-} ttype_t;
+} expr_test_type_t;
 typedef struct
 {
-	ttype_t t;
+	expr_test_type_t t;
 	expr_t* a;
-} test_t;
+} expr_test_t;
 
 typedef enum
 {
@@ -121,21 +121,21 @@ typedef enum
 	E_XCHG, E_MOV, E_LEA,               // affectation
 
 	E_TEST,
-} etype_t;
+} expr_type_t;
 
 struct expr
 {
-	etype_t type;
+	expr_type_t type;
 	union
 	{
 		char*  unk;
-		reg_t  reg;
-		im_t   im;
-		addr_t addr;
-		call_t call;
-		uni_t  uni;
-		bin_t  bin;
-		test_t test;
+		expr_reg_t  reg;
+		expr_im_t   im;
+		expr_addr_t addr;
+		expr_call_t call;
+		expr_uni_t  uni;
+		expr_bin_t  bin;
+		expr_test_t test;
 	} v;
 
 	// hierarchy information
@@ -163,9 +163,9 @@ int     e_cmp       (expr_t* a, expr_t* b);
 expr_t* e_unk(char* comment);
 
 // register, immediate, address
-expr_t* e_reg (rtype_t reg);
+expr_t* e_reg (expr_reg_type_t reg);
 expr_t* e_im  (ssize_t im);
-expr_t* e_addr(rtype_t base, rtype_t idx, size_t scale, ssize_t disp);
+expr_t* e_addr(expr_reg_type_t base, expr_reg_type_t idx, size_t scale, ssize_t disp);
 
 // zeroary
 expr_t* e_nop();
@@ -203,6 +203,6 @@ expr_t* e_mov (expr_t* a, expr_t* b);
 expr_t* e_lea (expr_t* a, expr_t* b);
 
 // test
-expr_t* e_test(ttype_t t, expr_t* a);
+expr_t* e_test(expr_test_type_t t, expr_t* a);
 
 #endif

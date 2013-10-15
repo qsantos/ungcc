@@ -349,8 +349,8 @@ static bool isContextInit(expr_t* e)
 		expr_t* b = e->v.bin.b;
 		if (a->type == E_REG && b->type == E_REG)
 		{
-			rtype_t reg_a = a->v.reg.t;
-			rtype_t reg_b = b->v.reg.t;
+			expr_reg_type_t reg_a = a->v.reg.t;
+			expr_reg_type_t reg_b = b->v.reg.t;
 			return reg_a == R_BP && reg_b == R_SP;
 		}
 		else
@@ -468,8 +468,8 @@ static void post_simpl_aux1(expr_t* e)
 		expr_t* b = e->v.bin.b; post_simpl_aux1(b);
 		if (b->type == E_ADDR && b->v.addr.disp == 0)
 		{
-			rtype_t base  = b->v.addr.base;
-			rtype_t idx   = b->v.addr.idx;
+			expr_reg_type_t base  = b->v.addr.base;
+			expr_reg_type_t idx   = b->v.addr.idx;
 			size_t  scale = b->v.addr.scale;
 
 			e->type = E_MOV;
@@ -591,7 +591,7 @@ static void post_reduc_aux2(expr_t* e, expr_t** last)
 	expr_t* a = e->v.bin.a;
 	if (e->type == E_MOV && a->type == E_REG)
 	{
-		rtype_t reg = a->v.reg.t;
+		expr_reg_type_t reg = a->v.reg.t;
 		expr_t* prev = last[reg];
 		last[reg] = e;
 		post_reduc_aux2(e->next, last);

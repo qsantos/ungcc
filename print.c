@@ -20,7 +20,7 @@
 
 #define PRTCHK(FCT, ...) {ret+=FCT(str+ret,size-ret,__VA_ARGS__);if(ret>=size)return ret;}
 
-size_t print_reg(char* str, size_t size, rtype_t reg, size_t s)
+size_t print_reg(char* str, size_t size, expr_reg_type_t reg, size_t s)
 {
 	size_t ret = 0;
 
@@ -127,7 +127,7 @@ size_t print_expr(char* str, size_t size, expr_t* e)
 
 	case E_ADDR:
 	{
-		addr_t* a = &e->v.addr;
+		expr_addr_t* a = &e->v.addr;
 /*
 For reminder, the context looks like:
 
